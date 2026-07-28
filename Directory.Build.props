@@ -1,0 +1,27 @@
+<Project>
+
+  <!--
+    Shared build settings for every project in the repository.
+    Individual projects only declare what makes them different.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- The build stays honest: a warning that is worth fixing is worth failing on. -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <Authors>Hennadii Malyhon</Authors>
+    <Product>Packly</Product>
+  </PropertyGroup>
+
+</Project>
