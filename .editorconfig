@@ -47,6 +47,34 @@ dotnet_naming_symbols.private_fields.applicable_accessibilities = private
 dotnet_naming_style.underscore_prefix.capitalization = camel_case
 dotnet_naming_style.underscore_prefix.required_prefix = _
 
+# --- Analyzer tuning --------------------------------------------------------
+# Three analyzer packages run over this repository and they overlap, so the rules
+# below are switched off deliberately.
+#
+# Roslynator ships with its analyzers off, so without this line the package is
+# installed but contributes nothing. 
+roslynator_analyzers.enabled_by_default = true
+
+# The comments that do exist are still validated - see GenerateDocumentationFile.
+dotnet_diagnostic.CS1591.severity = none    # missing XML comment on public member
+dotnet_diagnostic.SA1600.severity = none    # elements should be documented
+dotnet_diagnostic.SA1601.severity = none    # partial elements should be documented
+
+# No copyright banner on every file. The LICENSE file covers the repository.
+dotnet_diagnostic.SA1633.severity = none
+
+# These contradict conventions already set above in this same file. Leaving both
+# switched on would mean the build enforcing two opposite styles at once.
+dotnet_diagnostic.SA1101.severity = none    # prefix local calls with 'this.'
+dotnet_diagnostic.SA1309.severity = none    # field must not begin with '_'
+dotnet_diagnostic.SA1200.severity = none    # using directives inside namespace
+
+# StyleCop orders members by accessibility; readability usually argues for keeping
+# related members adjacent instead.
+dotnet_diagnostic.SA1201.severity = suggestion
+dotnet_diagnostic.SA1202.severity = suggestion
+dotnet_diagnostic.SA1204.severity = suggestion
+
 # --- Generated code ---------------------------------------------------------
 # EF Core scaffolds migrations; they are not hand-maintained style surface.
 

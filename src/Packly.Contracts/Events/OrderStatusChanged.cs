@@ -17,6 +17,8 @@ namespace Packly.Contracts.Events;
 /// source of truth even though it is read from several places.
 /// </para>
 /// </remarks>
+/// <param name="OrderId">The order whose status changed.</param>
+/// <param name="Status">The status the order moved to.</param>
 /// <param name="Version">
 /// Monotonically increasing per order, starting at 1. RabbitMQ guarantees delivery
 /// but not ordering across redeliveries, so the projection compares this against the
@@ -27,6 +29,7 @@ namespace Packly.Contracts.Events;
 /// Human-readable text intended for the customer, for example
 /// "Your order is being packed".
 /// </param>
+/// <param name="OccurredAt">When the transition happened.</param>
 public sealed record OrderStatusChanged(
     Guid OrderId,
     OrderStatus Status,
