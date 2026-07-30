@@ -78,6 +78,31 @@ services:
       retries: 10
       start_period: 20s
 
+  # Write side: accepts orders. Query endpoints and the live status page arrive in
+  # later commits.
+  api:
+    build:
+      # Root context, because the build needs Directory.Build.props and the
+      # analyzer configuration that live there.
+      context: .
+      dockerfile: src/Packly.Api/Dockerfile
+    container_name: packly-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      # Double underscore is the .NET convention for nesting in environment
+      # variables: this overrides ConnectionStrings:OrdersDb from appsettings.json,
+      # swapping localhost for the compose service name.
+      ConnectionStrings__OrdersDb: >-
+        Server=sqlserver,1433;Database=PacklyOrders;User Id=sa;
+        Password=${MSSQL_SA_PASSWORD:-Packly!Local1};TrustServerCertificate=True
+    ports:
+      - "${API_PORT:-8080}:8080"
+    depends_on:
+      # Waits for the health check rather than merely for the container to exist,
+      # so the migration on startup finds a database that can actually answer.
+      sqlserver:
+        condition: service_healthy
+
 volumes:
   rabbitmq-data:
   sqlserver-data:

@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!--
+    Write side of the CQRS split, plus the query endpoints that read the
+    projection. Framework and language settings come from Directory.Build.props;
+    package versions from Directory.Packages.props.
+  -->
+
+  <PropertyGroup>
+    <Description>Order submission API and query endpoints.</Description>
+    <UserSecretsId>packly-api</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+    <!-- Design-time only: needed by `dotnet ef migrations`, not at runtime. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <!-- Generates the OpenAPI document and serves the UI, so reviewers can
+         exercise the API without reaching for curl. -->
+    <PackageReference Include="Swashbuckle.AspNetCore" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Packly.Contracts\Packly.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

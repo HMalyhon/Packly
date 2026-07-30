@@ -7,6 +7,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Packly.Contracts", "src\Packly.Contracts\Packly.Contracts.csproj", "{F1E66F34-E154-4165-8F24-FEE2500D34F6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Packly.Api", "src\Packly.Api\Packly.Api.csproj", "{6AF63881-B6A5-4D52-9E02-477783323D5E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -29,11 +31,24 @@ Global
 		{F1E66F34-E154-4165-8F24-FEE2500D34F6}.Release|x64.Build.0 = Release|Any CPU
 		{F1E66F34-E154-4165-8F24-FEE2500D34F6}.Release|x86.ActiveCfg = Release|Any CPU
 		{F1E66F34-E154-4165-8F24-FEE2500D34F6}.Release|x86.Build.0 = Release|Any CPU
+		{6AF63881-B6A5-4D52-9E02-477783323D5E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6AF63881-B6A5-4D52-9E02-477783323D5E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6AF63881-B6A5-4D52-9E02-477783323D5E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{6AF63881-B6A5-4D52-9E02-477783323D5E}.Debug|x64.Build.0 = Debug|Any CPU
+		{6AF63881-B6A5-4D52-9E02-477783323D5E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6AF63881-B6A5-4D52-9E02-477783323D5E}.Debug|x86.Build.0 = Debug|Any CPU
+		{6AF63881-B6A5-4D52-9E02-477783323D5E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6AF63881-B6A5-4D52-9E02-477783323D5E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6AF63881-B6A5-4D52-9E02-477783323D5E}.Release|x64.ActiveCfg = Release|Any CPU
+		{6AF63881-B6A5-4D52-9E02-477783323D5E}.Release|x64.Build.0 = Release|Any CPU
+		{6AF63881-B6A5-4D52-9E02-477783323D5E}.Release|x86.ActiveCfg = Release|Any CPU
+		{6AF63881-B6A5-4D52-9E02-477783323D5E}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{F1E66F34-E154-4165-8F24-FEE2500D34F6} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{6AF63881-B6A5-4D52-9E02-477783323D5E} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal

@@ -1,0 +1,76 @@
+using System.Text.Json.Serialization;
+using Microsoft.EntityFrameworkCore;
+using Packly.Api.Features.Orders;
+using Packly.Api.Persistence;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddDbContext<OrdersDbContext>(options =>
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("OrdersDb"),
+        sql => sql.EnableRetryOnFailure()));
+
+// Injected rather than reading DateTimeOffset.UtcNow directly, so time is a
+// dependency a test can control instead of a fact of the environment.
+builder.Services.AddSingleton(TimeProvider.System);
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new() { Title = "Packly", Version = "v1" });
+
+    // Surfaces the XML documentation from the source in the generated document,
+    // which is the reason GenerateDocumentationFile is on for every project.
+    var documentation = Path.Combine(AppContext.BaseDirectory, "Packly.Api.xml");
+    if (File.Exists(documentation))
+    {
+        options.IncludeXmlComments(documentation);
+    }
+});
+
+// Statuses go out as "Submitted" rather than 0. An integer on the wire forces
+// every client to keep its own copy of the mapping, and silently means something
+// different the day a value is inserted into the enum.
+builder.Services.ConfigureHttpJsonOptions(options =>
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+
+builder.Services.AddProblemDetails();
+
+var app = builder.Build();
+
+// Applied at startup because this stack has to come up with a single command. A
+// production deployment would run migrations as their own step rather than have
+// every instance race to apply them.
+await using (var scope = app.Services.CreateAsyncScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<OrdersDbContext>();
+    await dbContext.Database.MigrateAsync();
+}
+
+// A malformed body - empty, truncated, or with a field of the wrong type - is
+// rejected by model binding before the handler runs, as a BadHttpRequestException
+// that already carries a 400. Without this selector the bare exception handler
+// reports all of them as 500, so the API would advertise a 400 in its OpenAPI
+// document that ordinary client mistakes never actually produce.
+app.UseExceptionHandler(new ExceptionHandlerOptions
+{
+    StatusCodeSelector = exception => exception is BadHttpRequestException badRequest
+        ? badRequest.StatusCode
+        : StatusCodes.Status500InternalServerError,
+});
+
+app.UseStatusCodePages();
+
+app.UseSwagger();
+app.UseSwaggerUI(options =>
+{
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Packly v1");
+
+    // Served at the root: opening the container's port lands a reviewer straight
+    // on something they can use.
+    options.RoutePrefix = string.Empty;
+});
+
+app.MapSubmitOrder();
+
+await app.RunAsync();

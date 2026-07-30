@@ -1,0 +1,16 @@
+# Build output must never enter the image. Beyond bloating the context, a copied
+# obj/ carries a project.assets.json full of host paths, which overwrites the
+# restore done inside the container and fails the build with NETSDK1064.
+**/bin/
+**/obj/
+
+.git/
+.github/
+.vs/
+.idea/
+.claude/
+
+.env
+docker-compose*.yml
+**/Dockerfile
+*.md

@@ -13,6 +13,15 @@
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
 
+  <ItemGroup Label="Persistence">
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10" />
+  </ItemGroup>
+
+  <ItemGroup Label="API">
+    <PackageVersion Include="Swashbuckle.AspNetCore" Version="10.2.3" />
+  </ItemGroup>
+
   <ItemGroup Label="Analyzers">
     <!--
       StyleCop 1.1.x is the newest stable release, but it predates file-scoped
