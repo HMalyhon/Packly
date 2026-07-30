@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Packly.Api.Features.Orders;
 using Packly.Api.Persistence;
@@ -9,6 +10,36 @@ builder.Services.AddDbContext<OrdersDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("OrdersDb"),
         sql => sql.EnableRetryOnFailure()));
+
+builder.Services.AddMassTransit(bus =>
+{
+    // The transactional outbox is the reason this API can promise that an order
+    // and its OrderSubmitted event are either both recorded or neither is.
+    // Publishing writes a row through the same DbContext, so the message is
+    // committed by the same transaction as the order; a delivery service then
+    // moves it to RabbitMQ. Publishing straight to the broker instead would leave
+    // two ways to be wrong: an order nobody is told about if the broker is down,
+    // or an event for an order that was rolled back.
+    bus.AddEntityFrameworkOutbox<OrdersDbContext>(outbox =>
+    {
+        outbox.UseSqlServer();
+        outbox.UseBusOutbox();
+    });
+
+    bus.UsingRabbitMq((context, rabbit) =>
+    {
+        rabbit.Host(
+            builder.Configuration["RabbitMq:Host"],
+            builder.Configuration["RabbitMq:VirtualHost"] ?? "/",
+            host =>
+            {
+                host.Username(builder.Configuration["RabbitMq:Username"]!);
+                host.Password(builder.Configuration["RabbitMq:Password"]!);
+            });
+
+        rabbit.ConfigureEndpoints(context);
+    });
+});
 
 // Injected rather than reading DateTimeOffset.UtcNow directly, so time is a
 // dependency a test can control instead of a fact of the environment.

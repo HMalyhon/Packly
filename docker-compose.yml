@@ -92,15 +92,19 @@ services:
       # Double underscore is the .NET convention for nesting in environment
       # variables: this overrides ConnectionStrings:OrdersDb from appsettings.json,
       # swapping localhost for the compose service name.
-      ConnectionStrings__OrdersDb: >-
-        Server=sqlserver,1433;Database=PacklyOrders;User Id=sa;
-        Password=${MSSQL_SA_PASSWORD:-Packly!Local1};TrustServerCertificate=True
+      ConnectionStrings__OrdersDb: "Server=sqlserver,1433;Database=PacklyOrders;User Id=sa;Password=${MSSQL_SA_PASSWORD:-Packly!Local1};TrustServerCertificate=True"
+      RabbitMq__Host: rabbitmq
+      RabbitMq__Username: ${RABBITMQ_USER:-packly}
+      RabbitMq__Password: ${RABBITMQ_PASSWORD:-packly}
     ports:
       - "${API_PORT:-8080}:8080"
     depends_on:
-      # Waits for the health check rather than merely for the container to exist,
-      # so the migration on startup finds a database that can actually answer.
+      # Waits for the health checks rather than merely for the containers to
+      # exist, so the migration on startup finds a database that can answer and
+      # the outbox has a broker to deliver to.
       sqlserver:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
 
 volumes:

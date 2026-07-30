@@ -12,6 +12,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="MassTransit" />
+    <PackageReference Include="MassTransit.RabbitMQ" />
+    <!-- Supplies the transactional outbox that ties publishing to the same
+         transaction as the order row. -->
+    <PackageReference Include="MassTransit.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
     <!-- Design-time only: needed by `dotnet ef migrations`, not at runtime. -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
