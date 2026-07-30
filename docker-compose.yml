@@ -1,0 +1,84 @@
+# Backing services for Packly.
+# Application services are added to this file by the commits that introduce them.
+#
+# Every value has a working default, so a fresh clone runs with `docker compose up`
+# and no setup. Copy .env.example to .env to override anything.
+
+name: packly
+
+services:
+
+  # Message broker. The management UI on :15672 shows exchanges, queues and
+  # message rates while the flow runs.
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    container_name: packly-rabbitmq
+    # RabbitMQ names its data directory after the host name. Without pinning it, a
+    # recreated container comes up with a new random name and silently abandons the
+    # durable queues sitting in the volume.
+    hostname: packly-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-packly}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-packly}
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  # Write side: the order aggregate, the MassTransit outbox, and saga state.
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: packly-sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:-Packly!Local1}
+      MSSQL_PID: Developer
+    ports:
+      - "${MSSQL_PORT:-1433}:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    healthcheck:
+      # $$ escapes to a literal $ so the shell inside the container expands the
+      # variable, not Compose. -C trusts the self-signed certificate, which
+      # mssql-tools18 requires and which is fine for a local container.
+      test:
+        - CMD-SHELL
+        - /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -C -Q "SELECT 1" || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  # Read side: the denormalised projection the API serves queries from.
+  #
+  # Pinned to 7 deliberately. mongo:8 segfaults within a minute of starting on
+  # some hosts - reproduced standalone, with no auth, volume or health check, so
+  # it is the image rather than anything here. Nothing in the read model needs 8.
+  mongo:
+    image: mongo:7
+    container_name: packly-mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-packly}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-packly}
+    ports:
+      - "${MONGO_PORT:-27017}:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+volumes:
+  rabbitmq-data:
+  sqlserver-data:
+  mongo-data:
