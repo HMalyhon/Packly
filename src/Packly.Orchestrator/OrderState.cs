@@ -1,0 +1,53 @@
+using MassTransit;
+
+namespace Packly.Orchestrator;
+
+/// <summary>
+/// One order's position in the workflow, as persisted between messages.
+/// </summary>
+/// <remarks>
+/// A saga instance holds only what later steps need to make decisions. It is not
+/// a copy of the order: the write model already owns that, and duplicating it
+/// here would create a second thing to keep correct.
+/// </remarks>
+public sealed class OrderState : SagaStateMachineInstance
+{
+    /// <summary>
+    /// Gets or sets the saga's identity, which is the order id. Correlating on the
+    /// order rather than a new key is what lets any service's message about an
+    /// order find the right instance.
+    /// </summary>
+    public Guid CorrelationId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the SQL Server rowversion used for optimistic concurrency.
+    /// </summary>
+    /// <remarks>
+    /// Maintained by the database, which stamps a new value on every update. That
+    /// matters: MassTransit's Entity Framework repository ignores
+    /// <c>ISagaVersion</c> - only the document-database repositories honour it -
+    /// and relies on Entity Framework's own concurrency token instead. A plain int
+    /// that nothing increments would produce a concurrency check that always
+    /// passes. Deliberately distinct from <see cref="StatusVersion"/>: this counts
+    /// database writes, that counts published transitions.
+    /// </remarks>
+    public byte[] RowVersion { get; set; } = [];
+
+    /// <summary>Gets or sets the current state name, persisted as text.</summary>
+    public string CurrentState { get; set; } = string.Empty;
+
+    /// <summary>Gets or sets the customer the order belongs to.</summary>
+    public string CustomerId { get; set; } = string.Empty;
+
+    /// <summary>Gets or sets the order total, needed to authorise payment.</summary>
+    public decimal Total { get; set; }
+
+    /// <summary>
+    /// Gets or sets how many status changes have been published for this order.
+    /// </summary>
+    /// <remarks>
+    /// Stamped onto every OrderStatusChanged so the projection can discard a
+    /// redelivered or out-of-order message instead of moving an order backwards.
+    /// </remarks>
+    public int StatusVersion { get; set; }
+}

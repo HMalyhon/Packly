@@ -24,6 +24,10 @@
     <PackageVersion Include="MassTransit.EntityFrameworkCore" Version="8.5.10" />
   </ItemGroup>
 
+  <ItemGroup Label="Hosting">
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.10" />
+  </ItemGroup>
+
   <ItemGroup Label="Persistence">
     <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.10" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10" />

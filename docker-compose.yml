@@ -107,6 +107,26 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  # Owns the order saga: the only service that decides what happens next, and the
+  # only publisher of OrderStatusChanged.
+  orchestrator:
+    build:
+      context: .
+      dockerfile: src/Packly.Orchestrator/Dockerfile
+    container_name: packly-orchestrator
+    environment:
+      # Its own database. Saga state belongs to the orchestrator, not to whoever
+      # happens to share a server with it.
+      ConnectionStrings__OrderStateDb: "Server=sqlserver,1433;Database=PacklyOrderState;User Id=sa;Password=${MSSQL_SA_PASSWORD:-Packly!Local1};TrustServerCertificate=True"
+      RabbitMq__Host: rabbitmq
+      RabbitMq__Username: ${RABBITMQ_USER:-packly}
+      RabbitMq__Password: ${RABBITMQ_PASSWORD:-packly}
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
 volumes:
   rabbitmq-data:
   sqlserver-data:
