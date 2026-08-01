@@ -5,9 +5,11 @@
   </PropertyGroup>
 
   <!--
-    No database and no outbox, unlike the API and the orchestrator. Those two have
-    state to keep consistent with what they publish; this service holds none, so
-    there is no transaction for a message to join.
+    No database, unlike the API and the orchestrator. Those two have state to keep
+    consistent with what they publish and so need the transactional outbox and its
+    Entity Framework package; this service holds none, so there is no transaction
+    for a message to join. It still uses the in-memory outbox, which is a different
+    thing: that one only defers publishes until the consumer succeeds.
   -->
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" />

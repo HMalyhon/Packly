@@ -1,6 +1,4 @@
-using System.Text.Json.Serialization;
 using MassTransit;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using Packly.Api.Features.Orders;
@@ -62,21 +60,6 @@ builder.Services.AddSwaggerGen(options =>
         options.IncludeXmlComments(documentation);
     }
 });
-
-// Statuses go out as "Submitted" rather than 0. An integer on the wire forces
-// every client to keep its own copy of the mapping, and silently means something
-// different the day a value is inserted into the enum.
-builder.Services.ConfigureHttpJsonOptions(options =>
-    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
-
-// The same converter again, because these are two different options objects and
-// Swashbuckle only reads this one. Configuring just the line above produced a
-// published schema declaring `"type": "integer"` for a field the API actually
-// returns as "Submitted" - a contract that contradicted the responses it
-// described, served at the root of the container for anyone to generate a broken
-// client from.
-builder.Services.Configure<JsonOptions>(options =>
-    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 builder.Services.AddProblemDetails();
 

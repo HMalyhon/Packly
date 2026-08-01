@@ -20,10 +20,8 @@ builder.Services.AddMassTransit(bus =>
         // service by a single queue name.
         rabbit.ReceiveEndpoint(QueueNames.Inventory, endpoint =>
         {
-            // Order matters here. UseInMemoryOutbox holds anything the consumer
-            // publishes until it returns successfully, so a retried attempt cannot
-            // leave a StockReserved behind from the attempt that failed. Retry
-            // without it turns one transient fault into duplicate events.
+            // Outermost, so it wraps the retry: a retried attempt cannot leave a
+            // StockReserved behind from the attempt that failed.
             endpoint.UseInMemoryOutbox(context);
             endpoint.UseMessageRetry(retry => retry.Interval(3, TimeSpan.FromMilliseconds(200)));
 

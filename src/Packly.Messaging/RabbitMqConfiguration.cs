@@ -40,9 +40,15 @@ public static class RabbitMqConfiguration
 
         var section = configuration.GetSection(SectionName);
 
+        // Optional, so it gets a default rather than the Required treatment - but
+        // blank still counts as absent, for the same reason it does there. An empty
+        // string is a legal virtual host name that no broker has, and asking for one
+        // fails at connect time with "vhost not found" long after startup.
+        var virtualHost = section["VirtualHost"];
+
         rabbit.Host(
             Required(section, "Host"),
-            section["VirtualHost"] ?? "/",
+            string.IsNullOrWhiteSpace(virtualHost) ? "/" : virtualHost,
             host =>
             {
                 host.Username(Required(section, "Username"));

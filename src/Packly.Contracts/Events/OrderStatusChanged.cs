@@ -5,17 +5,9 @@ namespace Packly.Contracts.Events;
 /// transition, and the single event that drives everything a user can observe.
 /// </summary>
 /// <remarks>
-/// <para>
-/// Three unrelated services subscribe to this one event, which is what makes the
-/// publish/subscribe fan-out concrete rather than theoretical:
-/// the projection service upserts the read model, the notification service reacts
-/// to terminal statuses, and the API pushes it to connected browsers over SignalR.
-/// None of them know the others exist.
-/// </para>
-/// <para>
-/// Because the orchestrator is the only publisher, order status has exactly one
-/// source of truth even though it is read from several places.
-/// </para>
+/// Published rather than sent, so the orchestrator names no recipient: it states
+/// what happened and is done. Because it is the only publisher, order status has
+/// exactly one source of truth however many services come to read it.
 /// </remarks>
 /// <param name="OrderId">The order whose status changed.</param>
 /// <param name="Status">The status the order moved to.</param>

@@ -27,15 +27,13 @@ public sealed class PackOrderConsumer(
 
         var message = context.Message;
 
-        // Deliberately the slowest step, so the live status page spends a visible
-        // moment on "your order is being packed" rather than flashing past it.
+        // Deliberately the slowest step. Packing is the one the product is named
+        // for, so the order should dwell in it rather than flash past.
         await Task.Delay(Random.Shared.Next(1200, 2500), context.CancellationToken);
 
-        // Version 4, not 7. A version 7 GUID carries its millisecond timestamp in
-        // the leading bits, so truncating one from the front keeps the clock and
-        // discards every random bit: 200 generated this way yielded a single
-        // distinct value. Version 4 is random throughout, so a prefix of it is
-        // safe to shorten.
+        // Version 4, not 7, for the reason spelled out in AuthorizePaymentConsumer:
+        // 200 tracking numbers built from a truncated version 7 GUID yielded one
+        // distinct value.
         var trackingNumber = $"PK{Guid.NewGuid():N}"[..12].ToUpperInvariant();
 
         logger.LogInformation(

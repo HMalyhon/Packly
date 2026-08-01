@@ -20,7 +20,7 @@ namespace Packly.Payment;
 /// instead of to the saga.
 /// </para>
 /// </remarks>
-/// <param name="timeProvider">Clock used to stamp results and simulate latency.</param>
+/// <param name="timeProvider">Clock used to stamp results.</param>
 /// <param name="logger">Records each decision.</param>
 public sealed class AuthorizePaymentConsumer(
     TimeProvider timeProvider,
@@ -44,8 +44,9 @@ public sealed class AuthorizePaymentConsumer(
 
         var message = context.Message;
 
-        // Stands in for the round trip to a real gateway, so the live status page
-        // has something to animate rather than jumping straight to the end.
+        // Stands in for the round trip to a real gateway. Without it the whole
+        // flow finishes faster than anything watching can resolve, which makes
+        // asynchronous steps look synchronous.
         await Task.Delay(Random.Shared.Next(300, 900), context.CancellationToken);
 
         if (message.Amount >= DeclineThreshold)
@@ -66,7 +67,11 @@ public sealed class AuthorizePaymentConsumer(
             return;
         }
 
-        var reference = $"PAY-{Guid.CreateVersion7():N}"[..16].ToUpperInvariant();
+        // Version 4, not 7. Only the leading characters survive the truncation,
+        // and those are exactly where a version 7 GUID keeps its millisecond
+        // timestamp: every authorisation in the same millisecond would share a
+        // reference. This is the handle a refund is issued against.
+        var reference = $"PAY-{Guid.NewGuid():N}"[..16].ToUpperInvariant();
 
         logger.LogInformation(
             "Payment authorized for order {OrderId}: {Amount}, reference {Reference}",

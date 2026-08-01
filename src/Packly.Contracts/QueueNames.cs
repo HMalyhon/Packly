@@ -25,7 +25,4 @@ public static class QueueNames
 
     /// <summary>Builds the read model.</summary>
     public const string Projection = "packly-projection";
-
-    /// <summary>Bridges bus events to connected browsers.</summary>
-    public const string ApiNotifications = "packly-api-notifications";
 }
