@@ -52,7 +52,7 @@ dotnet_naming_style.underscore_prefix.required_prefix = _
 # below are switched off deliberately.
 #
 # Roslynator ships with its analyzers off, so without this line the package is
-# installed but contributes nothing. 
+# installed but contributes nothing.
 roslynator_analyzers.enabled_by_default = true
 
 # The comments that do exist are still validated - see GenerateDocumentationFile.
@@ -63,8 +63,10 @@ dotnet_diagnostic.SA1601.severity = none    # partial elements should be documen
 # No copyright banner on every file. The LICENSE file covers the repository.
 dotnet_diagnostic.SA1633.severity = none
 
-# These contradict conventions already set above in this same file. Leaving both
-# switched on would mean the build enforcing two opposite styles at once.
+# SA1309 and SA1200 contradict conventions set above in this same file; leaving
+# them on would mean the build enforcing two opposite styles at once. SA1101 is
+# off for its own reason: `this.` on every member access is noise that modern C#
+# has not asked for since implicit usings and primary constructors.
 dotnet_diagnostic.SA1101.severity = none    # prefix local calls with 'this.'
 dotnet_diagnostic.SA1309.severity = none    # field must not begin with '_'
 dotnet_diagnostic.SA1200.severity = none    # using directives inside namespace

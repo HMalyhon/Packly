@@ -1,15 +1,21 @@
-using Packly.Contracts;
-
 namespace Packly.Api.Domain;
 
 /// <summary>
 /// An order as the write side understands it: the record of what a customer asked
-/// for, and how far through the workflow it has travelled.
+/// for.
 /// </summary>
 /// <remarks>
+/// <para>
 /// This is the write model, and it is shaped for correctness rather than for
-/// reading. Queries are served from the projection in MongoDB instead, which is
-/// what lets this type stay normalised and free of display concerns.
+/// reading. Queries will be served from the projection in MongoDB instead, which
+/// is what lets this type stay normalised and free of display concerns.
+/// </para>
+/// <para>
+/// Deliberately carries no status. How far an order has travelled through the
+/// workflow is the orchestrator's business, and a copy here would be a second
+/// source of truth that nothing updates - permanently stuck at "Submitted" while
+/// the real answer moved on.
+/// </para>
 /// </remarks>
 public sealed class Order
 {
@@ -26,7 +32,6 @@ public sealed class Order
         Id = id;
         CustomerId = customerId;
         SubmittedAt = submittedAt;
-        Status = OrderStatus.Submitted;
     }
 
     /// <summary>Gets the order's identifier, assigned on submission.</summary>
@@ -34,9 +39,6 @@ public sealed class Order
 
     /// <summary>Gets the customer who placed the order.</summary>
     public string CustomerId { get; private set; }
-
-    /// <summary>Gets how far the order has progressed through the workflow.</summary>
-    public OrderStatus Status { get; private set; }
 
     /// <summary>Gets when the order was accepted.</summary>
     public DateTimeOffset SubmittedAt { get; private set; }
@@ -51,7 +53,7 @@ public sealed class Order
     public decimal Total => _items.Sum(item => item.LineTotal);
 
     /// <summary>
-    /// Creates a new order in the <see cref="OrderStatus.Submitted"/> state.
+    /// Records a new order.
     /// </summary>
     /// <param name="customerId">The customer placing the order.</param>
     /// <param name="lines">The requested lines; at least one is required.</param>

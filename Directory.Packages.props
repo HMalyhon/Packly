@@ -2,8 +2,8 @@
 
   <!--
     Central package management: every NuGet version lives here, exactly once.
-    Projects reference packages without a Version attribute, so eight projects
-    can never drift onto different versions of MassTransit or EF Core.
+    Projects reference packages without a Version attribute, so no two can drift
+    onto different versions of MassTransit or EF Core.
 
     Entries are added by the commit that first needs them.
   -->

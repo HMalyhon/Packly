@@ -11,7 +11,11 @@ namespace Packly.Api.Features.Orders;
 /// should expect the status to change.
 /// </remarks>
 /// <param name="OrderId">Identifier to track the order by.</param>
-/// <param name="Status">The status at the moment of acceptance.</param>
+/// <param name="Status">
+/// Always <see cref="OrderStatus.Submitted"/>. Stated rather than omitted because
+/// it tells the caller which end of the workflow it is holding; every status after
+/// this one comes from the read model, not from here.
+/// </param>
 /// <param name="Total">The order total, summed from its lines.</param>
 public sealed record SubmitOrderResponse(
     Guid OrderId,

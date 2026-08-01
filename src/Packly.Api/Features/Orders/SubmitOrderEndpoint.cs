@@ -64,7 +64,7 @@ public static class SubmitOrderEndpoint
         // not happened yet. A 201 would imply the resource is in its final state.
         return TypedResults.Accepted(
             $"/api/orders/{order.Id}",
-            new SubmitOrderResponse(order.Id, order.Status, order.Total));
+            new SubmitOrderResponse(order.Id, OrderStatus.Submitted, order.Total));
     }
 
     /// <summary>

@@ -9,8 +9,9 @@ namespace Packly.Api.Persistence;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Nothing reads from here to answer a user's question. Queries are served from
-/// the MongoDB projection, which is the whole point of separating the two models.
+/// Nothing reads from here to answer a user's question. Queries will be served
+/// from the MongoDB projection, which is the whole point of separating the two
+/// models.
 /// </para>
 /// <para>
 /// This context also owns the MassTransit outbox tables, and that is deliberate:
