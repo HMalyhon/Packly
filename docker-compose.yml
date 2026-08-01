@@ -142,6 +142,20 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  # Simulated warehouse: reserves stock, then packs. Stateless like payment.
+  inventory:
+    build:
+      context: .
+      dockerfile: src/Packly.Inventory/Dockerfile
+    container_name: packly-inventory
+    environment:
+      RabbitMq__Host: rabbitmq
+      RabbitMq__Username: ${RABBITMQ_USER:-packly}
+      RabbitMq__Password: ${RABBITMQ_PASSWORD:-packly}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
 volumes:
   rabbitmq-data:
   sqlserver-data:

@@ -1,4 +1,5 @@
 using MassTransit;
+using Packly.Contracts;
 
 namespace Packly.Orchestrator;
 
@@ -41,6 +42,18 @@ public sealed class OrderState : SagaStateMachineInstance
 
     /// <summary>Gets or sets the order total, needed to authorise payment.</summary>
     public decimal Total { get; set; }
+
+    /// <summary>
+    /// Gets or sets the lines the order was placed for.
+    /// </summary>
+    /// <remarks>
+    /// Carried because the inventory service needs them and the saga is the only
+    /// thing that still knows the order by the time stock is reserved. Reading
+    /// them back out of the write model instead would give the orchestrator a
+    /// dependency on another service's database, which is the coupling this
+    /// architecture is arranged to avoid.
+    /// </remarks>
+    public List<OrderLine> Lines { get; set; } = [];
 
     /// <summary>
     /// Gets or sets how many status changes have been published for this order.

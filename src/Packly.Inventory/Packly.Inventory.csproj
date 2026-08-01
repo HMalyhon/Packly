@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <Description>Simulated stock reservation and packing.</Description>
+  </PropertyGroup>
+
+  <!-- Stateless, like the payment worker: it answers commands and holds nothing,
+       so it needs neither a database nor an outbox. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="MassTransit" />
+    <PackageReference Include="MassTransit.RabbitMQ" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Packly.Contracts\Packly.Contracts.csproj" />
+    <ProjectReference Include="..\Packly.Messaging\Packly.Messaging.csproj" />
+  </ItemGroup>
+
+</Project>

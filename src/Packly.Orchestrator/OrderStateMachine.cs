@@ -39,6 +39,8 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
         Event(() => OrderSubmitted, x => x.CorrelateById(context => context.Message.OrderId));
         Event(() => PaymentAuthorized, x => x.CorrelateById(context => context.Message.OrderId));
         Event(() => PaymentDeclined, x => x.CorrelateById(context => context.Message.OrderId));
+        Event(() => StockReserved, x => x.CorrelateById(context => context.Message.OrderId));
+        Event(() => OrderPacked, x => x.CorrelateById(context => context.Message.OrderId));
 
         Initially(
             When(OrderSubmitted)
@@ -46,6 +48,7 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
                 {
                     context.Saga.CustomerId = context.Message.CustomerId;
                     context.Saga.Total = context.Message.Total;
+                    context.Saga.Lines = [.. context.Message.Lines];
                     context.Saga.StatusVersion++;
 
                     logger.LogInformation(
@@ -89,6 +92,11 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
                     context.Saga.StatusVersion,
                     "Payment authorized.",
                     timeProvider.GetUtcNow()))
+                .Send(
+                    new Uri($"queue:{QueueNames.Inventory}"),
+                    context => new ReserveStock(
+                        context.Saga.CorrelationId,
+                        context.Saga.Lines))
                 .TransitionTo(AwaitingStock),
             When(PaymentDeclined)
                 .Then(context =>
@@ -107,6 +115,89 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
                     context.Message.Reason,
                     timeProvider.GetUtcNow()))
                 .TransitionTo(Rejected));
+
+        During(
+            AwaitingStock,
+            When(StockReserved)
+                .Then(context =>
+                {
+                    context.Saga.StatusVersion++;
+
+                    logger.LogInformation(
+                        "Order {OrderId} stock reserved, packing",
+                        context.Saga.CorrelationId);
+                })
+
+                // Two facts, so two status changes: the stock is reserved, and
+                // packing has begun. Collapsing them into one would lose a step a
+                // customer cares about, and it is the step the product is named for.
+                .Publish(context => new OrderStatusChanged(
+                    context.Saga.CorrelationId,
+                    OrderStatus.StockReserved,
+                    context.Saga.StatusVersion,
+                    "All items reserved.",
+                    timeProvider.GetUtcNow()))
+                .Then(context => context.Saga.StatusVersion++)
+                .Publish(context => new OrderStatusChanged(
+                    context.Saga.CorrelationId,
+                    OrderStatus.Packing,
+                    context.Saga.StatusVersion,
+                    "Your order is being packed.",
+                    timeProvider.GetUtcNow()))
+                .Send(
+                    new Uri($"queue:{QueueNames.Inventory}"),
+                    context => new PackOrder(
+                        context.Saga.CorrelationId,
+                        context.Saga.Lines))
+                .TransitionTo(Packing));
+
+        During(
+            Packing,
+            When(OrderPacked)
+                .Then(context =>
+                {
+                    context.Saga.StatusVersion++;
+
+                    logger.LogInformation(
+                        "Order {OrderId} packed, tracking {TrackingNumber}",
+                        context.Saga.CorrelationId,
+                        context.Message.TrackingNumber);
+                })
+                .Publish(context => new OrderStatusChanged(
+                    context.Saga.CorrelationId,
+                    OrderStatus.Completed,
+                    context.Saga.StatusVersion,
+                    $"On its way. Tracking {context.Message.TrackingNumber}.",
+                    timeProvider.GetUtcNow()))
+                .TransitionTo(Completed));
+
+        // An event for a step the order has already passed is a duplicate, and a
+        // duplicate is not an error. The inbox only catches redeliveries of the
+        // same MessageId; a worker that publishes twice - after a retry, say -
+        // produces a fresh MessageId that reaches here as a genuinely new message.
+        // Without these the saga throws UnhandledEventException, exhausts its
+        // retries and dead-letters an order that is otherwise perfectly fine.
+        During(
+            AwaitingStock,
+            Ignore(OrderSubmitted),
+            Ignore(PaymentAuthorized));
+
+        During(
+            Packing,
+            Ignore(OrderSubmitted),
+            Ignore(PaymentAuthorized),
+            Ignore(StockReserved));
+
+        // Terminal states ignore everything: whatever arrives now, the answer has
+        // already been given and published.
+        During(
+            Completed,
+            Rejected,
+            Ignore(OrderSubmitted),
+            Ignore(PaymentAuthorized),
+            Ignore(PaymentDeclined),
+            Ignore(StockReserved),
+            Ignore(OrderPacked));
     }
 
     /// <summary>
@@ -115,14 +206,19 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
     public State AwaitingPayment { get; private set; } = null!;
 
     /// <summary>
-    /// Gets the state entered once payment succeeded.
+    /// Gets the state entered once payment succeeded and stock has been requested.
     /// </summary>
-    /// <remarks>
-    /// The order rests here until the inventory service exists to be asked for
-    /// stock. Sending that command needs the order lines, which the saga does not
-    /// carry yet; both arrive together with the service that consumes them.
-    /// </remarks>
     public State AwaitingStock { get; private set; } = null!;
+
+    /// <summary>
+    /// Gets the state entered while the order is being picked and packed.
+    /// </summary>
+    public State Packing { get; private set; } = null!;
+
+    /// <summary>
+    /// Gets the terminal state for an order that was packed and dispatched.
+    /// </summary>
+    public State Completed { get; private set; } = null!;
 
     /// <summary>
     /// Gets the terminal state for an order whose payment was refused.
@@ -142,4 +238,10 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
 
     /// <summary>Gets the event raised when authorisation was refused.</summary>
     public Event<PaymentDeclined> PaymentDeclined { get; private set; } = null!;
+
+    /// <summary>Gets the event raised when every line was reserved from stock.</summary>
+    public Event<StockReserved> StockReserved { get; private set; } = null!;
+
+    /// <summary>Gets the event raised when the order has been packed for dispatch.</summary>
+    public Event<OrderPacked> OrderPacked { get; private set; } = null!;
 }
