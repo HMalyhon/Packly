@@ -37,6 +37,8 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
         // Correlating on OrderId means the saga instance and the order share an
         // identity, so nothing has to map between them.
         Event(() => OrderSubmitted, x => x.CorrelateById(context => context.Message.OrderId));
+        Event(() => PaymentAuthorized, x => x.CorrelateById(context => context.Message.OrderId));
+        Event(() => PaymentDeclined, x => x.CorrelateById(context => context.Message.OrderId));
 
         Initially(
             When(OrderSubmitted)
@@ -65,13 +67,46 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
                         context.Saga.Total))
                 .TransitionTo(AwaitingPayment));
 
-        // A second OrderSubmitted for an order already in flight is a duplicate,
-        // not a new order. Without this it would fault as an unhandled event and
-        // dead-letter; saying so explicitly makes the intent visible rather than
-        // leaving correct behaviour to look like an oversight.
+        // Ignoring OrderSubmitted here matters: a second one for an order already
+        // in flight is a duplicate, not a new order, and without this it would
+        // fault as an unhandled event and dead-letter. Saying so explicitly keeps
+        // correct behaviour from looking like an oversight.
         During(
             AwaitingPayment,
-            Ignore(OrderSubmitted));
+            Ignore(OrderSubmitted),
+            When(PaymentAuthorized)
+                .Then(context =>
+                {
+                    context.Saga.StatusVersion++;
+
+                    logger.LogInformation(
+                        "Order {OrderId} payment authorized",
+                        context.Saga.CorrelationId);
+                })
+                .Publish(context => new OrderStatusChanged(
+                    context.Saga.CorrelationId,
+                    OrderStatus.PaymentAuthorized,
+                    context.Saga.StatusVersion,
+                    "Payment authorized.",
+                    timeProvider.GetUtcNow()))
+                .TransitionTo(AwaitingStock),
+            When(PaymentDeclined)
+                .Then(context =>
+                {
+                    context.Saga.StatusVersion++;
+
+                    logger.LogInformation(
+                        "Order {OrderId} rejected: {Reason}",
+                        context.Saga.CorrelationId,
+                        context.Message.Reason);
+                })
+                .Publish(context => new OrderStatusChanged(
+                    context.Saga.CorrelationId,
+                    OrderStatus.Rejected,
+                    context.Saga.StatusVersion,
+                    context.Message.Reason,
+                    timeProvider.GetUtcNow()))
+                .TransitionTo(Rejected));
     }
 
     /// <summary>
@@ -79,6 +114,32 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
     /// </summary>
     public State AwaitingPayment { get; private set; } = null!;
 
+    /// <summary>
+    /// Gets the state entered once payment succeeded.
+    /// </summary>
+    /// <remarks>
+    /// The order rests here until the inventory service exists to be asked for
+    /// stock. Sending that command needs the order lines, which the saga does not
+    /// carry yet; both arrive together with the service that consumes them.
+    /// </remarks>
+    public State AwaitingStock { get; private set; } = null!;
+
+    /// <summary>
+    /// Gets the terminal state for an order whose payment was refused.
+    /// </summary>
+    /// <remarks>
+    /// Distinct from cancellation. Nothing was ever charged, so there is nothing
+    /// to compensate and the order simply stops; an order cancelled after payment
+    /// has to be refunded first.
+    /// </remarks>
+    public State Rejected { get; private set; } = null!;
+
     /// <summary>Gets the event raised when the API accepts a new order.</summary>
     public Event<OrderSubmitted> OrderSubmitted { get; private set; } = null!;
+
+    /// <summary>Gets the event raised when funds were successfully authorised.</summary>
+    public Event<PaymentAuthorized> PaymentAuthorized { get; private set; } = null!;
+
+    /// <summary>Gets the event raised when authorisation was refused.</summary>
+    public Event<PaymentDeclined> PaymentDeclined { get; private set; } = null!;
 }

@@ -127,6 +127,21 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  # Simulated payment gateway. Stateless: it answers one command and holds
+  # nothing, so it needs neither a database nor an outbox.
+  payment:
+    build:
+      context: .
+      dockerfile: src/Packly.Payment/Dockerfile
+    container_name: packly-payment
+    environment:
+      RabbitMq__Host: rabbitmq
+      RabbitMq__Username: ${RABBITMQ_USER:-packly}
+      RabbitMq__Password: ${RABBITMQ_PASSWORD:-packly}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
 volumes:
   rabbitmq-data:
   sqlserver-data:

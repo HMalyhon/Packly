@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <Description>Simulated payment authorization.</Description>
+  </PropertyGroup>
+
+  <!--
+    No database and no outbox, unlike the API and the orchestrator. Those two have
+    state to keep consistent with what they publish; this service holds none, so
+    there is no transaction for a message to join.
+  -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="MassTransit" />
+    <PackageReference Include="MassTransit.RabbitMQ" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Packly.Contracts\Packly.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>
