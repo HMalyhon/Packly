@@ -8,6 +8,7 @@ WORKDIR /src
 # .editorconfig carries the analyzer severities and the build fails without it.
 COPY Directory.Build.props Directory.Packages.props stylecop.json .editorconfig ./
 COPY src/Packly.Contracts/Packly.Contracts.csproj src/Packly.Contracts/
+COPY src/Packly.Messaging/Packly.Messaging.csproj src/Packly.Messaging/
 COPY src/Packly.Payment/Packly.Payment.csproj src/Packly.Payment/
 RUN dotnet restore src/Packly.Payment/Packly.Payment.csproj
 

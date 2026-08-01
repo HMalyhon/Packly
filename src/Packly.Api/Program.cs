@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using Packly.Api.Features.Orders;
 using Packly.Api.Persistence;
+using Packly.Messaging;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,14 +31,7 @@ builder.Services.AddMassTransit(bus =>
 
     bus.UsingRabbitMq((context, rabbit) =>
     {
-        rabbit.Host(
-            builder.Configuration["RabbitMq:Host"],
-            builder.Configuration["RabbitMq:VirtualHost"] ?? "/",
-            host =>
-            {
-                host.Username(builder.Configuration["RabbitMq:Username"]!);
-                host.Password(builder.Configuration["RabbitMq:Password"]!);
-            });
+        rabbit.ConfigurePacklyHost(builder.Configuration);
 
         rabbit.ConfigureEndpoints(context);
     });

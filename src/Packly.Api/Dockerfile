@@ -11,6 +11,7 @@ WORKDIR /src
 # without it the analyzers fail this build under TreatWarningsAsErrors.
 COPY Directory.Build.props Directory.Packages.props stylecop.json .editorconfig ./
 COPY src/Packly.Contracts/Packly.Contracts.csproj src/Packly.Contracts/
+COPY src/Packly.Messaging/Packly.Messaging.csproj src/Packly.Messaging/
 COPY src/Packly.Api/Packly.Api.csproj src/Packly.Api/
 RUN dotnet restore src/Packly.Api/Packly.Api.csproj
 

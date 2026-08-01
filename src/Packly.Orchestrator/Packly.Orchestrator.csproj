@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Packly.Contracts\Packly.Contracts.csproj" />
+    <ProjectReference Include="..\Packly.Messaging\Packly.Messaging.csproj" />
   </ItemGroup>
 
 </Project>

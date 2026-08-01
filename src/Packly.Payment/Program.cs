@@ -1,5 +1,6 @@
 using MassTransit;
 using Packly.Contracts;
+using Packly.Messaging;
 using Packly.Payment;
 
 var builder = Host.CreateApplicationBuilder(args);
@@ -12,14 +13,7 @@ builder.Services.AddMassTransit(bus =>
 
     bus.UsingRabbitMq((context, rabbit) =>
     {
-        rabbit.Host(
-            builder.Configuration["RabbitMq:Host"],
-            builder.Configuration["RabbitMq:VirtualHost"] ?? "/",
-            host =>
-            {
-                host.Username(builder.Configuration["RabbitMq:Username"]!);
-                host.Password(builder.Configuration["RabbitMq:Password"]!);
-            });
+        rabbit.ConfigurePacklyHost(builder.Configuration);
 
         // Named explicitly rather than derived from the consumer type, because the
         // orchestrator addresses this queue by name when it sends a command. The

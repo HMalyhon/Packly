@@ -1,6 +1,7 @@
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Packly.Contracts;
+using Packly.Messaging;
 using Packly.Orchestrator;
 using Packly.Orchestrator.Persistence;
 
@@ -34,14 +35,7 @@ builder.Services.AddMassTransit(bus =>
 
     bus.UsingRabbitMq((context, rabbit) =>
     {
-        rabbit.Host(
-            builder.Configuration["RabbitMq:Host"],
-            builder.Configuration["RabbitMq:VirtualHost"] ?? "/",
-            host =>
-            {
-                host.Username(builder.Configuration["RabbitMq:Username"]!);
-                host.Password(builder.Configuration["RabbitMq:Password"]!);
-            });
+        rabbit.ConfigurePacklyHost(builder.Configuration);
 
         rabbit.ReceiveEndpoint(QueueNames.Orchestrator, endpoint =>
         {

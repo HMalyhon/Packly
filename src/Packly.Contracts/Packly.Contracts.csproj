@@ -1,8 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    The only assembly shared between services. Services share message schemas
-    and nothing else - no shared domain logic, no shared persistence.
+    The message schemas every service exchanges. Services share these and their
+    broker configuration (Packly.Messaging) - no shared domain logic, no shared
+    persistence.
 
     Deliberately has zero package dependencies: a contracts assembly that drags
     in a transport or a serializer couples every consumer to that choice.
