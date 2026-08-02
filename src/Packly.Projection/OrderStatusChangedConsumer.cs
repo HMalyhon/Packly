@@ -1,6 +1,7 @@
 using MassTransit;
 using MongoDB.Driver;
 using Packly.Contracts.Events;
+using Packly.ReadModel;
 
 namespace Packly.Projection;
 

@@ -9,6 +9,7 @@ WORKDIR /src
 COPY Directory.Build.props Directory.Packages.props stylecop.json .editorconfig ./
 COPY src/Packly.Contracts/Packly.Contracts.csproj src/Packly.Contracts/
 COPY src/Packly.Messaging/Packly.Messaging.csproj src/Packly.Messaging/
+COPY src/Packly.ReadModel/Packly.ReadModel.csproj src/Packly.ReadModel/
 COPY src/Packly.Projection/Packly.Projection.csproj src/Packly.Projection/
 RUN dotnet restore src/Packly.Projection/Packly.Projection.csproj
 

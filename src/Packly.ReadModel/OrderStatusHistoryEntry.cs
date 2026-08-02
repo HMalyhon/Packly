@@ -2,7 +2,7 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using Packly.Contracts;
 
-namespace Packly.Projection;
+namespace Packly.ReadModel;
 
 /// <summary>
 /// One step in an order's journey, as recorded in the read model.

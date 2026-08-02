@@ -1,36 +1,13 @@
 using MassTransit;
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization;
-using MongoDB.Bson.Serialization.Conventions;
-using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Driver;
 using Packly.Contracts;
 using Packly.Messaging;
 using Packly.Projection;
+using Packly.ReadModel;
 
 var builder = Host.CreateApplicationBuilder(args);
 
-// Guids as the standard BSON binary subtype rather than the driver's legacy
-// layout. Without this the serializer refuses to write one at all, because the
-// representation is unspecified by default and it will not guess.
-BsonSerializer.RegisterSerializer(new GuidSerializer(GuidRepresentation.Standard));
-
-// Field names as camelCase, so a document read in mongosh looks like what the
-// API will later serve rather than like the C# class behind it.
-ConventionRegistry.Register(
-    "camelCase",
-    new ConventionPack { new CamelCaseElementNameConvention() },
-    _ => true);
-
-var readModelUrl = new MongoUrl(
-    builder.Configuration.GetConnectionString("ReadModel")
-    ?? throw new InvalidOperationException("Connection string 'ReadModel' is required."));
-
-builder.Services.AddSingleton<IMongoClient>(_ => new MongoClient(readModelUrl));
-builder.Services.AddSingleton(provider => provider
-    .GetRequiredService<IMongoClient>()
-    .GetDatabase(readModelUrl.DatabaseName)
-    .GetCollection<OrderStatusDocument>("order_status"));
+builder.Services.AddPacklyReadModel(builder.Configuration);
 
 builder.Services.AddMassTransit(bus =>
 {
@@ -55,4 +32,27 @@ builder.Services.AddMassTransit(bus =>
     });
 });
 
-await builder.Build().RunAsync();
+var host = builder.Build();
+
+// Indexes are created by the service that owns the schema, not by the ones that
+// query it. Same reasoning as the migrations the API and orchestrator apply at
+// startup: one command has to bring the whole stack up.
+await using (var scope = host.Services.CreateAsyncScope())
+{
+    var collection = scope.ServiceProvider.GetRequiredService<IMongoCollection<OrderStatusDocument>>();
+    var stopping = host.Services.GetRequiredService<IHostApplicationLifetime>().ApplicationStopping;
+
+    // Serves the list query when it is filtered by status, which is the shape that
+    // would otherwise scan. Unfiltered, a compound index led by status cannot help
+    // and the query still scans and sorts in memory - acceptable for a collection
+    // this size, and the honest reason not to add a second index for it. Lookups
+    // by id are already served by the primary key, which is the order id.
+    var byStatus = new CreateIndexModel<OrderStatusDocument>(
+        Builders<OrderStatusDocument>.IndexKeys
+            .Ascending(document => document.Status)
+            .Descending(document => document.UpdatedAt));
+
+    await collection.Indexes.CreateOneAsync(byStatus, cancellationToken: stopping);
+}
+
+await host.RunAsync();

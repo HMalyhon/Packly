@@ -4,13 +4,19 @@ using Microsoft.OpenApi;
 using Packly.Api.Features.Orders;
 using Packly.Api.Persistence;
 using Packly.Messaging;
+using Packly.ReadModel;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// The write side. Everything the API records goes through here and nothing reads
+// it back: the two connections below are the CQRS split, made literal.
 builder.Services.AddDbContext<OrdersDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("OrdersDb"),
         sql => sql.EnableRetryOnFailure()));
+
+// The read side. Written by the projection service, only queried here.
+builder.Services.AddPacklyReadModel(builder.Configuration);
 
 builder.Services.AddMassTransit(bus =>
 {
@@ -99,5 +105,7 @@ app.UseSwaggerUI(options =>
 });
 
 app.MapSubmitOrder();
+app.MapGetOrderStatus();
+app.MapListOrders();
 
 await app.RunAsync();

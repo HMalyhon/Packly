@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The read model's schema and the serialisation it assumes, shared by the service
+    that writes the collection and the one that queries it. It carries no query of
+    its own: both sides build their own, against documents that agree.
+  -->
+
+  <PropertyGroup>
+    <Description>Read model schema and connection setup for Packly services.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MongoDB.Driver" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Packly.Contracts\Packly.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

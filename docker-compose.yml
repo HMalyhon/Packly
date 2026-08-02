@@ -78,8 +78,8 @@ services:
       retries: 10
       start_period: 20s
 
-  # Write side: accepts orders. Query endpoints and the live status page arrive in
-  # later commits.
+  # Both sides of the split: accepts orders into SQL Server, answers queries from
+  # MongoDB. The live status page arrives in a later commit.
   api:
     build:
       # Root context, because the build needs Directory.Build.props and the
@@ -93,6 +93,7 @@ services:
       # variables: this overrides ConnectionStrings:OrdersDb from appsettings.json,
       # swapping localhost for the compose service name.
       ConnectionStrings__OrdersDb: "Server=sqlserver,1433;Database=PacklyOrders;User Id=sa;Password=${MSSQL_SA_PASSWORD:-Packly!Local1};TrustServerCertificate=True"
+      ConnectionStrings__ReadModel: "mongodb://${MONGO_USER:-packly}:${MONGO_PASSWORD:-packly}@mongo:27017/PacklyRead?authSource=admin"
       RabbitMq__Host: rabbitmq
       RabbitMq__Username: ${RABBITMQ_USER:-packly}
       RabbitMq__Password: ${RABBITMQ_PASSWORD:-packly}
@@ -103,6 +104,8 @@ services:
       # exist, so the migration on startup finds a database that can answer and
       # the outbox has a broker to deliver to.
       sqlserver:
+        condition: service_healthy
+      mongo:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy

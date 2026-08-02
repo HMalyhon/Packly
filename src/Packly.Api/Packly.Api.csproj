@@ -1,9 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <!--
-    Write side of the CQRS split. Query endpoints that read the projection arrive
-    with the read model. Framework and language settings come from
-    Directory.Build.props; package versions from Directory.Packages.props.
+    Both sides of the CQRS split meet here, and only here: writes go to SQL Server
+    through Entity Framework, queries to MongoDB through the read model. The two
+    never touch - no endpoint reads one and writes the other. Framework and
+    language settings come from Directory.Build.props; package versions from
+    Directory.Packages.props.
   -->
 
   <PropertyGroup>
@@ -18,6 +20,9 @@
          transaction as the order row. -->
     <PackageReference Include="MassTransit.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+    <!-- The query endpoints name its builders directly, so it is declared here
+         rather than relied on through Packly.ReadModel's own reference. -->
+    <PackageReference Include="MongoDB.Driver" />
     <!-- Design-time only: needed by `dotnet ef migrations`, not at runtime. -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
       <PrivateAssets>all</PrivateAssets>
@@ -31,6 +36,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Packly.Contracts\Packly.Contracts.csproj" />
     <ProjectReference Include="..\Packly.Messaging\Packly.Messaging.csproj" />
+    <ProjectReference Include="..\Packly.ReadModel\Packly.ReadModel.csproj" />
   </ItemGroup>
 
 </Project>

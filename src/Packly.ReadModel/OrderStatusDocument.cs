@@ -2,7 +2,7 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using Packly.Contracts;
 
-namespace Packly.Projection;
+namespace Packly.ReadModel;
 
 /// <summary>
 /// One order's status as the query side sees it.
@@ -46,12 +46,13 @@ public sealed class OrderStatusDocument
     public DateTime UpdatedAt { get; set; }
 
     /// <summary>
-    /// Gets or sets every status this order has passed through, oldest first.
+    /// Gets or sets the statuses recorded for this order, oldest first.
     /// </summary>
     /// <remarks>
-    /// Kept in the document rather than in a collection of its own. It is only ever
-    /// read alongside the order it belongs to and is bounded by the length of the
-    /// workflow, which is exactly when embedding beats a second lookup.
+    /// Embedded rather than kept in a collection of its own: it is only ever read
+    /// alongside the order it belongs to and is bounded by the length of the
+    /// workflow. Ordered but not guaranteed complete - a status overtaken in
+    /// delivery loses the version comparison and is never recorded.
     /// </remarks>
     public List<OrderStatusHistoryEntry> History { get; set; } = [];
 }
