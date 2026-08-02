@@ -21,8 +21,8 @@ builder.Services.AddMassTransit(bus =>
         {
             // Optimistic rather than pessimistic: concurrent messages for a single
             // order are uncommon, and an occasional retry costs less than every
-            // message taking a row lock. The Version column makes the loser retry
-            // instead of overwriting the winner.
+            // message taking a row lock. The rowversion column makes the loser
+            // retry instead of overwriting the winner.
             repository.ConcurrencyMode = ConcurrencyMode.Optimistic;
             repository.ExistingDbContext<OrderStateDbContext>();
         });

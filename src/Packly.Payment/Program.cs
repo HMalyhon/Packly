@@ -10,6 +10,7 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddMassTransit(bus =>
 {
     bus.AddConsumer<AuthorizePaymentConsumer>();
+    bus.AddConsumer<RefundPaymentConsumer>();
 
     bus.UsingRabbitMq((context, rabbit) =>
     {
@@ -28,6 +29,7 @@ builder.Services.AddMassTransit(bus =>
             endpoint.UseMessageRetry(retry => retry.Interval(3, TimeSpan.FromMilliseconds(200)));
 
             endpoint.ConfigureConsumer<AuthorizePaymentConsumer>(context);
+            endpoint.ConfigureConsumer<RefundPaymentConsumer>(context);
         });
     });
 });

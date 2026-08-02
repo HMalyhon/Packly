@@ -44,6 +44,28 @@ public sealed class OrderState : SagaStateMachineInstance
     public decimal Total { get; set; }
 
     /// <summary>
+    /// Gets or sets the handle for the authorised payment, empty until there is one.
+    /// </summary>
+    /// <remarks>
+    /// Kept because a refund has to name the authorisation it reverses, and by the
+    /// time stock fails the authorisation happened several messages ago. This is
+    /// the whole reason compensation needs saga state rather than a stateless
+    /// reaction to the failure event.
+    /// </remarks>
+    public string PaymentReference { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets why the order is being cancelled, empty unless it is.
+    /// </summary>
+    /// <remarks>
+    /// Held over the refund round trip. The customer is told nothing until the
+    /// money is actually back, and by then the event that explains why has long
+    /// been handled; the refund confirmation does not echo it, because the payment
+    /// service has no business knowing why it was asked.
+    /// </remarks>
+    public string CancellationReason { get; set; } = string.Empty;
+
+    /// <summary>
     /// Gets or sets the lines the order was placed for.
     /// </summary>
     /// <remarks>

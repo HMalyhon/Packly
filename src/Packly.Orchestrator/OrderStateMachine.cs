@@ -40,7 +40,9 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
         Event(() => PaymentAuthorized, x => x.CorrelateById(context => context.Message.OrderId));
         Event(() => PaymentDeclined, x => x.CorrelateById(context => context.Message.OrderId));
         Event(() => StockReserved, x => x.CorrelateById(context => context.Message.OrderId));
+        Event(() => StockUnavailable, x => x.CorrelateById(context => context.Message.OrderId));
         Event(() => OrderPacked, x => x.CorrelateById(context => context.Message.OrderId));
+        Event(() => PaymentRefunded, x => x.CorrelateById(context => context.Message.OrderId));
 
         Initially(
             When(OrderSubmitted)
@@ -80,6 +82,7 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
             When(PaymentAuthorized)
                 .Then(context =>
                 {
+                    context.Saga.PaymentReference = context.Message.PaymentReference;
                     context.Saga.StatusVersion++;
 
                     logger.LogInformation(
@@ -149,7 +152,51 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
                     context => new PackOrder(
                         context.Saga.CorrelationId,
                         context.Saga.Lines))
-                .TransitionTo(Packing));
+                .TransitionTo(Packing),
+            When(StockUnavailable)
+                .Then(context =>
+                {
+                    context.Saga.CancellationReason =
+                        $"{context.Message.Sku}: {context.Message.Reason}";
+
+                    logger.LogWarning(
+                        "Order {OrderId} cannot be reserved ({Reason}), refunding {Reference}",
+                        context.Saga.CorrelationId,
+                        context.Saga.CancellationReason,
+                        context.Saga.PaymentReference);
+                })
+                .Send(
+                    new Uri($"queue:{QueueNames.Payment}"),
+                    context => new RefundPayment(
+                        context.Saga.CorrelationId,
+                        context.Saga.PaymentReference,
+                        context.Saga.Total,
+                        context.Saga.CancellationReason))
+                .TransitionTo(Refunding));
+
+        // The compensating branch publishes nothing when stock fails: payment has
+        // already succeeded, and announcing a cancellation before the money moves
+        // would be a promise the compensation has not yet kept. The customer hears
+        // once, here, when the refund is confirmed.
+        During(
+            Refunding,
+            When(PaymentRefunded)
+                .Then(context =>
+                {
+                    context.Saga.StatusVersion++;
+
+                    logger.LogInformation(
+                        "Order {OrderId} refunded {Amount}, cancelled",
+                        context.Saga.CorrelationId,
+                        context.Message.Amount);
+                })
+                .Publish(context => new OrderStatusChanged(
+                    context.Saga.CorrelationId,
+                    OrderStatus.Cancelled,
+                    context.Saga.StatusVersion,
+                    $"Cancelled - {context.Saga.CancellationReason}. Your payment has been refunded.",
+                    timeProvider.GetUtcNow()))
+                .TransitionTo(Cancelled));
 
         During(
             Packing,
@@ -188,8 +235,16 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
             Ignore(PaymentAuthorized),
             Ignore(StockReserved));
 
+        During(
+            Refunding,
+            Ignore(OrderSubmitted),
+            Ignore(PaymentAuthorized),
+            Ignore(StockUnavailable));
+
         // Terminal states ignore everything: whatever arrives now, the answer has
-        // already been given and published.
+        // already been given and published. Only the events an order in that state
+        // can actually have caused are listed - stock never answered an order that
+        // was rejected for payment, so nothing from inventory can arrive there.
         During(
             Completed,
             Rejected,
@@ -198,6 +253,13 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
             Ignore(PaymentDeclined),
             Ignore(StockReserved),
             Ignore(OrderPacked));
+
+        During(
+            Cancelled,
+            Ignore(OrderSubmitted),
+            Ignore(PaymentAuthorized),
+            Ignore(StockUnavailable),
+            Ignore(PaymentRefunded));
     }
 
     /// <summary>
@@ -216,6 +278,16 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
     public State Packing { get; private set; } = null!;
 
     /// <summary>
+    /// Gets the state entered while the authorised payment is being reversed.
+    /// </summary>
+    /// <remarks>
+    /// Exists because compensation is not instantaneous. Without a state of its
+    /// own the order would either be called off before the money moved, or the
+    /// refund confirmation would arrive somewhere with nothing to receive it.
+    /// </remarks>
+    public State Refunding { get; private set; } = null!;
+
+    /// <summary>
     /// Gets the terminal state for an order that was packed and dispatched.
     /// </summary>
     public State Completed { get; private set; } = null!;
@@ -230,6 +302,16 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
     /// </remarks>
     public State Rejected { get; private set; } = null!;
 
+    /// <summary>
+    /// Gets the terminal state for an order called off after payment succeeded.
+    /// </summary>
+    /// <remarks>
+    /// Reached only through <see cref="Refunding"/>, so an order in this state has
+    /// certainly had its money returned. That is what separates it from
+    /// <see cref="Rejected"/>, where nothing was ever taken.
+    /// </remarks>
+    public State Cancelled { get; private set; } = null!;
+
     /// <summary>Gets the event raised when the API accepts a new order.</summary>
     public Event<OrderSubmitted> OrderSubmitted { get; private set; } = null!;
 
@@ -242,6 +324,12 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
     /// <summary>Gets the event raised when every line was reserved from stock.</summary>
     public Event<StockReserved> StockReserved { get; private set; } = null!;
 
+    /// <summary>Gets the event raised when a line could not be reserved.</summary>
+    public Event<StockUnavailable> StockUnavailable { get; private set; } = null!;
+
     /// <summary>Gets the event raised when the order has been packed for dispatch.</summary>
     public Event<OrderPacked> OrderPacked { get; private set; } = null!;
+
+    /// <summary>Gets the event raised when an authorised payment was reversed.</summary>
+    public Event<PaymentRefunded> PaymentRefunded { get; private set; } = null!;
 }

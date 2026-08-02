@@ -22,6 +22,8 @@ internal sealed class OrderStateMap : SagaClassMap<OrderState>
 
         entity.Property(state => state.CustomerId).HasMaxLength(128);
         entity.Property(state => state.Total).HasPrecision(18, 2);
+        entity.Property(state => state.PaymentReference).HasMaxLength(64);
+        entity.Property(state => state.CancellationReason).HasMaxLength(256);
 
         // Stored as a JSON column rather than a child table. The saga never
         // queries or joins on lines - it carries them from one command to the

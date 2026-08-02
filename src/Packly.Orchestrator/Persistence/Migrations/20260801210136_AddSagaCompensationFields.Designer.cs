@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Packly.Orchestrator.Persistence;
 
@@ -11,9 +12,11 @@ using Packly.Orchestrator.Persistence;
 namespace Packly.Orchestrator.Persistence.Migrations
 {
     [DbContext(typeof(OrderStateDbContext))]
-    partial class OrderStateDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260801210136_AddSagaCompensationFields")]
+    partial class AddSagaCompensationFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
