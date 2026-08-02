@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Packly.Messaging", "src\Pac
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Packly.Inventory", "src\Packly.Inventory\Packly.Inventory.csproj", "{39C6DA86-E2C4-448E-9C8D-E7A8A0597883}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Packly.Notification", "src\Packly.Notification\Packly.Notification.csproj", "{875C6269-3281-427A-82BD-76BDFB9ED12D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -99,6 +101,18 @@ Global
 		{39C6DA86-E2C4-448E-9C8D-E7A8A0597883}.Release|x64.Build.0 = Release|Any CPU
 		{39C6DA86-E2C4-448E-9C8D-E7A8A0597883}.Release|x86.ActiveCfg = Release|Any CPU
 		{39C6DA86-E2C4-448E-9C8D-E7A8A0597883}.Release|x86.Build.0 = Release|Any CPU
+		{875C6269-3281-427A-82BD-76BDFB9ED12D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{875C6269-3281-427A-82BD-76BDFB9ED12D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{875C6269-3281-427A-82BD-76BDFB9ED12D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{875C6269-3281-427A-82BD-76BDFB9ED12D}.Debug|x64.Build.0 = Debug|Any CPU
+		{875C6269-3281-427A-82BD-76BDFB9ED12D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{875C6269-3281-427A-82BD-76BDFB9ED12D}.Debug|x86.Build.0 = Debug|Any CPU
+		{875C6269-3281-427A-82BD-76BDFB9ED12D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{875C6269-3281-427A-82BD-76BDFB9ED12D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{875C6269-3281-427A-82BD-76BDFB9ED12D}.Release|x64.ActiveCfg = Release|Any CPU
+		{875C6269-3281-427A-82BD-76BDFB9ED12D}.Release|x64.Build.0 = Release|Any CPU
+		{875C6269-3281-427A-82BD-76BDFB9ED12D}.Release|x86.ActiveCfg = Release|Any CPU
+		{875C6269-3281-427A-82BD-76BDFB9ED12D}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -110,5 +124,6 @@ Global
 		{E4DD27FF-C379-4D7D-92D9-97DA438B892C} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{25021C6A-0E2A-4BC0-8669-FE90AE96C75D} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{39C6DA86-E2C4-448E-9C8D-E7A8A0597883} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{875C6269-3281-427A-82BD-76BDFB9ED12D} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal

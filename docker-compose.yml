@@ -156,6 +156,22 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  # Subscribes to order status changes and "emails" the customer on outcomes.
+  # Nothing sends to it and nothing waits for it: stopping this service leaves
+  # orders processing exactly as before, minus the mail.
+  notification:
+    build:
+      context: .
+      dockerfile: src/Packly.Notification/Dockerfile
+    container_name: packly-notification
+    environment:
+      RabbitMq__Host: rabbitmq
+      RabbitMq__Username: ${RABBITMQ_USER:-packly}
+      RabbitMq__Password: ${RABBITMQ_PASSWORD:-packly}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
 volumes:
   rabbitmq-data:
   sqlserver-data:
