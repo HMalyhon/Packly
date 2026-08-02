@@ -172,6 +172,27 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  # Builds the read model. The only writer of the query side, and the second
+  # independent subscriber to the same status events the notification service
+  # receives.
+  projection:
+    build:
+      context: .
+      dockerfile: src/Packly.Projection/Dockerfile
+    container_name: packly-projection
+    environment:
+      # authSource=admin because the credentials belong to the root user, which
+      # lives in admin rather than in the database being addressed.
+      ConnectionStrings__ReadModel: "mongodb://${MONGO_USER:-packly}:${MONGO_PASSWORD:-packly}@mongo:27017/PacklyRead?authSource=admin"
+      RabbitMq__Host: rabbitmq
+      RabbitMq__Username: ${RABBITMQ_USER:-packly}
+      RabbitMq__Password: ${RABBITMQ_PASSWORD:-packly}
+    depends_on:
+      mongo:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
 volumes:
   rabbitmq-data:
   sqlserver-data:

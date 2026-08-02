@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <Description>Projects order status changes into the MongoDB read model.</Description>
+  </PropertyGroup>
+
+  <!-- The only service that writes the read model, and the only one outside the
+       API and the orchestrator that touches a database at all. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="MassTransit" />
+    <PackageReference Include="MassTransit.RabbitMQ" />
+    <PackageReference Include="MongoDB.Driver" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Packly.Contracts\Packly.Contracts.csproj" />
+    <ProjectReference Include="..\Packly.Messaging\Packly.Messaging.csproj" />
+  </ItemGroup>
+
+</Project>
