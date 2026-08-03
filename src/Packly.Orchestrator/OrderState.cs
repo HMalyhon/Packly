@@ -59,9 +59,10 @@ public sealed class OrderState : SagaStateMachineInstance
     /// </summary>
     /// <remarks>
     /// Held over the refund round trip. The customer is told nothing until the
-    /// money is actually back, and by then the event that explains why has long
-    /// been handled; the refund confirmation does not echo it, because the payment
-    /// service has no business knowing why it was asked.
+    /// reversal is confirmed, and by then the event that explains why has long been
+    /// handled. The command carries the reason for the payment service's own
+    /// record, but the confirmation does not echo it back, so the saga is the only
+    /// thing that still knows it when the answer arrives.
     /// </remarks>
     public string CancellationReason { get; set; } = string.Empty;
 

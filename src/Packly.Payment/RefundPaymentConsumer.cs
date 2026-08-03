@@ -27,6 +27,18 @@ public sealed class RefundPaymentConsumer(
 
         var message = context.Message;
 
+        // A refund with nothing to refund against is a fault, not a business
+        // outcome, so it throws rather than answering. Without this it would
+        // succeed, publish a confirmation, and the saga would tell the customer
+        // their money was back - which is worse than failing loudly. Reachable
+        // through an in-flight saga whose PaymentReference was backfilled empty by
+        // a migration, and through anything else that sends a malformed command.
+        if (string.IsNullOrWhiteSpace(message.PaymentReference))
+        {
+            throw new InvalidOperationException(
+                $"Order {message.OrderId} asked for a refund with no payment reference.");
+        }
+
         await Task.Delay(Random.Shared.Next(300, 900), context.CancellationToken);
 
         logger.LogInformation(

@@ -40,9 +40,9 @@ public sealed class OrderStatusChangedConsumer(ILogger<OrderStatusChangedConsume
             OrderStatus.Rejected => "We could not take payment for your order",
             OrderStatus.Cancelled => "Your order was cancelled and refunded",
 
-            // Everything else is a step on the way, not an outcome. Mailing on
-            // each one would be four emails per order and would make the two that
-            // matter easy to miss.
+            // Everything else is a step on the way, not an outcome. Exactly one of
+            // the three above happens per order; mailing the rest as well would
+            // bury it under progress reports nobody asked for.
             _ => null,
         };
 

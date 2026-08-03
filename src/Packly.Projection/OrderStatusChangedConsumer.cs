@@ -61,7 +61,7 @@ public sealed class OrderStatusChangedConsumer(
 
         if (!await TryApplyAsync(filter, update, context.CancellationToken))
         {
-            logger.LogDebug(
+            logger.LogInformation(
                 "Discarded status version {Version} for order {OrderId}: already superseded",
                 message.Version,
                 message.OrderId);

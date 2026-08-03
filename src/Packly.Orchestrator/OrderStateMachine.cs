@@ -44,6 +44,32 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
         Event(() => OrderPacked, x => x.CorrelateById(context => context.Message.OrderId));
         Event(() => PaymentRefunded, x => x.CorrelateById(context => context.Message.OrderId));
 
+        // An event a state has no handler for is a duplicate, not a fault. The
+        // inbox only catches redeliveries of the same MessageId; a worker that
+        // publishes twice - after a crash between publishing and acknowledging -
+        // mints a fresh one that arrives here as a genuinely new message about a
+        // step the order has already passed.
+        //
+        // Declared once for the whole machine rather than as an Ignore list per
+        // state. Those lists only covered the combinations the current workers can
+        // produce, which holds because both decide deterministically from their
+        // command: the same ReserveStock always answers the same way. A real
+        // warehouse whose stock ran out between two deliveries would answer
+        // differently the second time, and StockUnavailable would arrive at an
+        // order already packed - a combination no list contained, faulting an
+        // otherwise healthy order. The default belongs with the rule, not with the
+        // eight states that would each have to remember it.
+        OnUnhandledEvent(context =>
+        {
+            logger.LogInformation(
+                "Order {OrderId} ignored {Event} in state {State}",
+                context.Saga.CorrelationId,
+                context.Event.Name,
+                context.CurrentState.Name);
+
+            return context.Ignore();
+        });
+
         Initially(
             When(OrderSubmitted)
                 .Then(context =>
@@ -72,13 +98,8 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
                         context.Saga.Total))
                 .TransitionTo(AwaitingPayment));
 
-        // Ignoring OrderSubmitted here matters: a second one for an order already
-        // in flight is a duplicate, not a new order, and without this it would
-        // fault as an unhandled event and dead-letter. Saying so explicitly keeps
-        // correct behaviour from looking like an oversight.
         During(
             AwaitingPayment,
-            Ignore(OrderSubmitted),
             When(PaymentAuthorized)
                 .Then(context =>
                 {
@@ -217,49 +238,6 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
                     $"On its way. Tracking {context.Message.TrackingNumber}.",
                     timeProvider.GetUtcNow()))
                 .TransitionTo(Completed));
-
-        // An event for a step the order has already passed is a duplicate, and a
-        // duplicate is not an error. The inbox only catches redeliveries of the
-        // same MessageId; a worker that publishes twice - after a retry, say -
-        // produces a fresh MessageId that reaches here as a genuinely new message.
-        // Without these the saga throws UnhandledEventException, exhausts its
-        // retries and dead-letters an order that is otherwise perfectly fine.
-        During(
-            AwaitingStock,
-            Ignore(OrderSubmitted),
-            Ignore(PaymentAuthorized));
-
-        During(
-            Packing,
-            Ignore(OrderSubmitted),
-            Ignore(PaymentAuthorized),
-            Ignore(StockReserved));
-
-        During(
-            Refunding,
-            Ignore(OrderSubmitted),
-            Ignore(PaymentAuthorized),
-            Ignore(StockUnavailable));
-
-        // Terminal states ignore everything: whatever arrives now, the answer has
-        // already been given and published. Only the events an order in that state
-        // can actually have caused are listed - stock never answered an order that
-        // was rejected for payment, so nothing from inventory can arrive there.
-        During(
-            Completed,
-            Rejected,
-            Ignore(OrderSubmitted),
-            Ignore(PaymentAuthorized),
-            Ignore(PaymentDeclined),
-            Ignore(StockReserved),
-            Ignore(OrderPacked));
-
-        During(
-            Cancelled,
-            Ignore(OrderSubmitted),
-            Ignore(PaymentAuthorized),
-            Ignore(StockUnavailable),
-            Ignore(PaymentRefunded));
     }
 
     /// <summary>
@@ -306,9 +284,13 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
     /// Gets the terminal state for an order called off after payment succeeded.
     /// </summary>
     /// <remarks>
-    /// Reached only through <see cref="Refunding"/>, so an order in this state has
-    /// certainly had its money returned. That is what separates it from
-    /// <see cref="Rejected"/>, where nothing was ever taken.
+    /// Reached only through <see cref="Refunding"/>, so an order here was answered
+    /// by the payment service rather than abandoned. That is what separates it from
+    /// <see cref="Rejected"/>, where authorisation was refused and there was never
+    /// anything to reverse. The saga takes the confirmation at its word: it
+    /// correlates on the order and does not check the reversal against the
+    /// authorisation it holds, which is safe while the only publisher is the
+    /// service it asked.
     /// </remarks>
     public State Cancelled { get; private set; } = null!;
 
