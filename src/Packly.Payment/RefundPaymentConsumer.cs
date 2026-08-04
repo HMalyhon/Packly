@@ -13,11 +13,8 @@ namespace Packly.Payment;
 /// was committed long ago and cannot be rolled back, so it is undone by a second
 /// action that is itself a normal business operation.
 /// </remarks>
-/// <param name="timeProvider">Clock used to stamp results.</param>
 /// <param name="logger">Records each reversal.</param>
-public sealed class RefundPaymentConsumer(
-    TimeProvider timeProvider,
-    ILogger<RefundPaymentConsumer> logger)
+public sealed class RefundPaymentConsumer(ILogger<RefundPaymentConsumer> logger)
     : IConsumer<RefundPayment>
 {
     /// <inheritdoc />
@@ -52,8 +49,7 @@ public sealed class RefundPaymentConsumer(
             new PaymentRefunded(
                 message.OrderId,
                 message.PaymentReference,
-                message.Amount,
-                timeProvider.GetUtcNow()),
+                message.Amount),
             context.CancellationToken);
     }
 }

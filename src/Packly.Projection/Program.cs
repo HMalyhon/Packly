@@ -1,9 +1,12 @@
 using MassTransit;
 using MongoDB.Driver;
-using Packly.Contracts;
 using Packly.Messaging;
 using Packly.Projection;
 using Packly.ReadModel;
+
+// This service's own endpoint. Nothing sends to it - it subscribes by message
+// type - so the name is declared here rather than in the shared contracts.
+const string QueueName = "packly-projection";
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -20,7 +23,7 @@ builder.Services.AddMassTransit(bus =>
         // The second subscriber to the same event. Its queue is bound alongside
         // the notification service's rather than instead of it, so both receive
         // every status change and neither knows the other is listening.
-        rabbit.ReceiveEndpoint(QueueNames.Projection, endpoint =>
+        rabbit.ReceiveEndpoint(QueueName, endpoint =>
         {
             // Worth retrying rather than dead-lettering: the write is idempotent,
             // so a second attempt after a transient database failure either

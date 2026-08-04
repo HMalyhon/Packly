@@ -20,22 +20,13 @@ namespace Packly.Payment;
 /// instead of to the saga.
 /// </para>
 /// </remarks>
-/// <param name="timeProvider">Clock used to stamp results.</param>
 /// <param name="logger">Records each decision.</param>
-public sealed class AuthorizePaymentConsumer(
-    TimeProvider timeProvider,
-    ILogger<AuthorizePaymentConsumer> logger)
+public sealed class AuthorizePaymentConsumer(ILogger<AuthorizePaymentConsumer> logger)
     : IConsumer<AuthorizePayment>
 {
-    /// <summary>
-    /// Orders at or above this amount are declined.
-    /// </summary>
-    /// <remarks>
-    /// Deterministic on purpose. A random failure rate would make the demo
-    /// unreproducible and the tests flaky; a threshold means anyone can trigger
-    /// the rejected path on demand by ordering enough.
-    /// </remarks>
-    public const decimal DeclineThreshold = 1000m;
+    // Deterministic on purpose: a random failure rate would make the declined
+    // path something you wait for rather than something you can trigger.
+    private const decimal DeclineThreshold = 1000m;
 
     /// <inheritdoc />
     public async Task Consume(ConsumeContext<AuthorizePayment> context)
@@ -60,8 +51,7 @@ public sealed class AuthorizePaymentConsumer(
             await context.Publish(
                 new PaymentDeclined(
                     message.OrderId,
-                    $"Amount {message.Amount:0.00} exceeds the authorization limit.",
-                    timeProvider.GetUtcNow()),
+                    $"Amount {message.Amount:0.00} exceeds the authorization limit."),
                 context.CancellationToken);
 
             return;
@@ -83,8 +73,7 @@ public sealed class AuthorizePaymentConsumer(
             new PaymentAuthorized(
                 message.OrderId,
                 reference,
-                message.Amount,
-                timeProvider.GetUtcNow()),
+                message.Amount),
             context.CancellationToken);
     }
 }

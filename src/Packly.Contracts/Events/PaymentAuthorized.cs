@@ -6,9 +6,7 @@ namespace Packly.Contracts.Events;
 /// Handle for the authorisation, needed later to refund it.
 /// </param>
 /// <param name="Amount">The amount authorised.</param>
-/// <param name="AuthorizedAt">When authorisation succeeded.</param>
 public sealed record PaymentAuthorized(
     Guid OrderId,
     string PaymentReference,
-    decimal Amount,
-    DateTimeOffset AuthorizedAt);
+    decimal Amount);

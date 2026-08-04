@@ -9,5 +9,4 @@ public sealed record OrderSubmitted(
     Guid OrderId,
     string CustomerId,
     IReadOnlyList<OrderLine> Lines,
-    decimal Total,
-    DateTimeOffset SubmittedAt);
+    decimal Total);

@@ -6,5 +6,4 @@ namespace Packly.Contracts.Events;
 /// </summary>
 public sealed record PaymentDeclined(
     Guid OrderId,
-    string Reason,
-    DateTimeOffset DeclinedAt);
+    string Reason);

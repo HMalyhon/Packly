@@ -54,7 +54,6 @@ public sealed class OrderStatusChangedConsumer(
                 new OrderStatusHistoryEntry
                 {
                     Status = message.Status,
-                    Version = message.Version,
                     Description = message.Description,
                     OccurredAt = message.OccurredAt.UtcDateTime,
                 });

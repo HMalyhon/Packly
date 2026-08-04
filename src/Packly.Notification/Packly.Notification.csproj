@@ -8,7 +8,6 @@
        nothing, so it needs neither a database nor an outbox of either kind. -->
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" />
-    <PackageReference Include="MassTransit" />
     <PackageReference Include="MassTransit.RabbitMQ" />
   </ItemGroup>
 

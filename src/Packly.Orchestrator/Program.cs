@@ -1,9 +1,12 @@
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
-using Packly.Contracts;
 using Packly.Messaging;
 using Packly.Orchestrator;
 using Packly.Orchestrator.Persistence;
+
+// This service's own endpoint. Nothing sends to it - it subscribes by message
+// type - so the name is declared here rather than in the shared contracts.
+const string QueueName = "packly-orchestrator";
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -37,7 +40,7 @@ builder.Services.AddMassTransit(bus =>
     {
         rabbit.ConfigurePacklyHost(builder.Configuration);
 
-        rabbit.ReceiveEndpoint(QueueNames.Orchestrator, endpoint =>
+        rabbit.ReceiveEndpoint(QueueName, endpoint =>
         {
             // Required for optimistic concurrency to mean anything: MassTransit
             // does not retry on its own, so without this a losing write would

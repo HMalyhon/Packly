@@ -13,11 +13,8 @@ namespace Packly.Inventory;
 /// what lets the customer be told the order is being packed rather than waiting
 /// in silence until it ships.
 /// </remarks>
-/// <param name="timeProvider">Clock used to stamp results.</param>
 /// <param name="logger">Records each parcel.</param>
-public sealed class PackOrderConsumer(
-    TimeProvider timeProvider,
-    ILogger<PackOrderConsumer> logger)
+public sealed class PackOrderConsumer(ILogger<PackOrderConsumer> logger)
     : IConsumer<PackOrder>
 {
     /// <inheritdoc />
@@ -43,7 +40,7 @@ public sealed class PackOrderConsumer(
             trackingNumber);
 
         await context.Publish(
-            new OrderPacked(message.OrderId, trackingNumber, timeProvider.GetUtcNow()),
+            new OrderPacked(message.OrderId, trackingNumber),
             context.CancellationToken);
     }
 }

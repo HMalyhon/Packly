@@ -16,17 +16,11 @@ namespace Packly.Api.Features.Orders;
 /// </remarks>
 public static class ListOrdersEndpoint
 {
-    /// <summary>The page size used when the caller does not choose one.</summary>
-    public const int DefaultPageSize = 20;
+    private const int DefaultPageSize = 20;
 
-    /// <summary>
-    /// The largest page a caller may ask for.
-    /// </summary>
-    /// <remarks>
-    /// A cap rather than a suggestion. Without one, a single request can ask the
-    /// database for the entire collection and the API will serialise all of it.
-    /// </remarks>
-    public const int MaxPageSize = 100;
+    // A cap rather than a suggestion: without one a single request can ask the
+    // database for the whole collection and the API will serialise all of it.
+    private const int MaxPageSize = 100;
 
     /// <summary>
     /// Maps the order list query.

@@ -1,7 +1,10 @@
 using MassTransit;
-using Packly.Contracts;
 using Packly.Messaging;
 using Packly.Notification;
+
+// This service's own endpoint. Nothing sends to it - it subscribes by message
+// type - so the name is declared here rather than in the shared contracts.
+const string QueueName = "packly-notification";
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -17,7 +20,7 @@ builder.Services.AddMassTransit(bus =>
         // what makes this a genuine second subscriber rather than a competing
         // consumer: every subscriber gets its own copy, so adding this service
         // takes nothing away from the ones already listening.
-        rabbit.ReceiveEndpoint(QueueNames.Notification, endpoint =>
+        rabbit.ReceiveEndpoint(QueueName, endpoint =>
         {
             // No outbox, because this consumer publishes nothing. Retries are here
             // for the transport rather than the work: a genuine mail service would

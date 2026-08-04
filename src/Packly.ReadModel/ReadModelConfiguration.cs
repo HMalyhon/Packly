@@ -20,15 +20,8 @@ namespace Packly.ReadModel;
 /// </remarks>
 public static class ReadModelConfiguration
 {
-    /// <summary>
-    /// The connection string holding the read model's address and database.
-    /// </summary>
-    public const string ConnectionStringName = "ReadModel";
-
-    /// <summary>
-    /// The collection holding one document per order.
-    /// </summary>
-    public const string CollectionName = "order_status";
+    private const string ConnectionStringName = "ReadModel";
+    private const string CollectionName = "order_status";
 
     /// <summary>
     /// Registers the read model collection and the conventions it is stored with.

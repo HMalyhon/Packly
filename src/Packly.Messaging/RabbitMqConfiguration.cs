@@ -15,10 +15,7 @@ namespace Packly.Messaging;
 /// </remarks>
 public static class RabbitMqConfiguration
 {
-    /// <summary>
-    /// The configuration section holding broker settings.
-    /// </summary>
-    public const string SectionName = "RabbitMq";
+    private const string SectionName = "RabbitMq";
 
     /// <summary>
     /// Points the bus at the broker described by configuration.

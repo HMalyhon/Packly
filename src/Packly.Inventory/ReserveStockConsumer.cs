@@ -12,24 +12,14 @@ namespace Packly.Inventory;
 /// reserved order would leave the workflow holding stock it may never use and no
 /// clear answer for the customer.
 /// </remarks>
-/// <param name="timeProvider">Clock used to stamp results.</param>
 /// <param name="logger">Records each reservation.</param>
-public sealed class ReserveStockConsumer(
-    TimeProvider timeProvider,
-    ILogger<ReserveStockConsumer> logger)
+public sealed class ReserveStockConsumer(ILogger<ReserveStockConsumer> logger)
     : IConsumer<ReserveStock>
 {
-    /// <summary>
-    /// Any SKU beginning with this cannot be reserved.
-    /// </summary>
-    /// <remarks>
-    /// Deterministic, like the payment threshold, so the compensating path can be
-    /// triggered on demand rather than waited for. Encoding the rule in the SKU
-    /// keeps it in the request: nothing has to be seeded, and the same order
-    /// always behaves the same way, which is what makes a redelivery a duplicate
-    /// rather than a coin toss.
-    /// </remarks>
-    public const string SoldOutPrefix = "SOLD-OUT";
+    // Encoding the rule in the SKU keeps it in the request: nothing has to be
+    // seeded, and the same order always answers the same way - which is what makes
+    // a redelivered command a duplicate rather than a coin toss.
+    private const string SoldOutPrefix = "SOLD-OUT";
 
     /// <inheritdoc />
     public async Task Consume(ConsumeContext<ReserveStock> context)
@@ -58,8 +48,7 @@ public sealed class ReserveStockConsumer(
                 new StockUnavailable(
                     message.OrderId,
                     soldOut.Sku,
-                    "out of stock",
-                    timeProvider.GetUtcNow()),
+                    "out of stock"),
                 context.CancellationToken);
 
             return;
@@ -71,7 +60,7 @@ public sealed class ReserveStockConsumer(
             message.OrderId);
 
         await context.Publish(
-            new StockReserved(message.OrderId, timeProvider.GetUtcNow()),
+            new StockReserved(message.OrderId),
             context.CancellationToken);
     }
 }

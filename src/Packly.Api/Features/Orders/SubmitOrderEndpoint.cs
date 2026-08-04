@@ -80,8 +80,7 @@ public static class SubmitOrderEndpoint
             order.Id,
             order.CustomerId,
             [.. order.Items.Select(item => new OrderLine(item.Sku, item.Name, item.Quantity, item.UnitPrice))],
-            order.Total,
-            order.SubmittedAt);
+            order.Total);
 
     /// <summary>
     /// Validates the request and turns it into an aggregate, collecting every

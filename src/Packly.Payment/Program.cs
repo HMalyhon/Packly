@@ -5,8 +5,6 @@ using Packly.Payment;
 
 var builder = Host.CreateApplicationBuilder(args);
 
-builder.Services.AddSingleton(TimeProvider.System);
-
 builder.Services.AddMassTransit(bus =>
 {
     bus.AddConsumer<AuthorizePaymentConsumer>();

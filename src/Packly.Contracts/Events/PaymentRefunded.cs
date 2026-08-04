@@ -7,9 +7,7 @@ namespace Packly.Contracts.Events;
 /// <param name="OrderId">The order that was refunded.</param>
 /// <param name="PaymentReference">The authorisation that was reversed.</param>
 /// <param name="Amount">The amount returned.</param>
-/// <param name="RefundedAt">When the reversal completed.</param>
 public sealed record PaymentRefunded(
     Guid OrderId,
     string PaymentReference,
-    decimal Amount,
-    DateTimeOffset RefundedAt);
+    decimal Amount);

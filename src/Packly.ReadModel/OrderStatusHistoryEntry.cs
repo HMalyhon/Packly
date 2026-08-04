@@ -13,9 +13,6 @@ public sealed class OrderStatusHistoryEntry
     [BsonRepresentation(BsonType.String)]
     public OrderStatus Status { get; set; }
 
-    /// <summary>Gets or sets the version of the change that recorded it.</summary>
-    public int Version { get; set; }
-
     /// <summary>Gets or sets the customer-facing text published with it.</summary>
     public string Description { get; set; } = string.Empty;
 
