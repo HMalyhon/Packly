@@ -191,6 +191,19 @@ The same holds for the broker itself. Stop RabbitMQ, submit an order, and the AP
 still answers 202: the event is staged in the outbox table alongside the order
 row and delivered once the broker returns.
 
+## Tests
+
+```bash
+dotnet test
+```
+
+The saga is the part worth testing and the part hardest to check by hand: the
+three ways an order can end, and the duplicate that must not end it. Five tests
+run against an in-memory bus and saga repository rather than RabbitMQ and SQL
+Server — what is under test is the decision, which command follows which event
+and where the order lands, and that is the same whichever transport carries it.
+No containers, a few seconds.
+
 ## Layout
 
 | Project | Role |
