@@ -9,16 +9,10 @@ namespace Packly.Orchestrator;
 /// The order workflow, in one place.
 /// </summary>
 /// <remarks>
-/// <para>
-/// Every decision about what happens next to an order is made here. The services
-/// that carry the steps out will each know how to do one job and nothing about
-/// the sequence they sit in, so the flow can be rearranged without touching them.
-/// </para>
-/// <para>
-/// This service is also the only publisher of <see cref="OrderStatusChanged"/>,
-/// so order status has exactly one source of truth however many services react
-/// to it.
-/// </para>
+/// Every decision about what happens next is made here, and nowhere else knows
+/// the sequence, so the flow can be rearranged without touching a worker. Also
+/// the only publisher of <see cref="OrderStatusChanged"/>, which is what gives
+/// order status one source of truth.
 /// </remarks>
 public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
 {

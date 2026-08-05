@@ -7,11 +7,9 @@ namespace Packly.Messaging;
 /// Connects a service to the broker.
 /// </summary>
 /// <remarks>
-/// Extracted once three services needed the same block, not in anticipation of
-/// them. What is shared is only the connection: each service still declares its
-/// own consumers, sagas and endpoints, because those are the parts that differ
-/// and hiding them behind a helper would make the topology harder to read rather
-/// than easier.
+/// Only the connection is shared. Each service still declares its own consumers,
+/// sagas and endpoints, because hiding those behind a helper would make the
+/// topology harder to read rather than easier.
 /// </remarks>
 public static class RabbitMqConfiguration
 {

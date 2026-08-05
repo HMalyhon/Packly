@@ -41,8 +41,6 @@ builder.Services.AddMassTransit(bus =>
     });
 });
 
-// Injected rather than reading DateTimeOffset.UtcNow directly, so time is a
-// dependency a test can control instead of a fact of the environment.
 builder.Services.AddSingleton(TimeProvider.System);
 
 builder.Services.AddEndpointsApiExplorer();

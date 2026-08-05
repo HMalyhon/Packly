@@ -39,11 +39,10 @@ internal sealed class OrderStateMap : SagaClassMap<OrderState>
             lines.Property(line => line.UnitPrice).HasPrecision(18, 2);
         });
 
-        // SQL Server stamps a new value on every update, so a stale write fails
-        // with DbUpdateConcurrencyException instead of quietly overwriting the
-        // winner. It has to be the database doing this: MassTransit's Entity
-        // Framework repository ignores ISagaVersion, and a plain counter nothing
-        // increments would make the concurrency check always pass.
+        // It has to be the database stamping this. MassTransit's Entity Framework
+        // repository ignores ISagaVersion - only the document-database ones honour
+        // it - so a plain counter nothing increments would make every concurrency
+        // check pass.
         entity.Property(state => state.RowVersion).IsRowVersion();
     }
 }

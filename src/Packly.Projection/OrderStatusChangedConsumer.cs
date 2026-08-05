@@ -9,18 +9,9 @@ namespace Packly.Projection;
 /// Keeps the read model up to date with the orchestrator's decisions.
 /// </summary>
 /// <remarks>
-/// <para>
-/// The seam between the two sides of CQRS. The write side is normalised, owns the
-/// order aggregate and answers no questions; this side is denormalised, owns
-/// nothing and answers all of them. Neither can corrupt the other, because the
-/// only thing crossing between them is an event.
-/// </para>
-/// <para>
-/// The read model is therefore eventually consistent, and a query issued in the
-/// instant between a transition and this update returns the previous status. That
-/// is the price of the split, and the reason the version below matters more than
-/// it looks.
-/// </para>
+/// The seam between the two sides of CQRS, and the reason the read model is
+/// eventually consistent: a query issued between a transition and this update
+/// still returns the previous status.
 /// </remarks>
 /// <param name="collection">The read model collection.</param>
 /// <param name="logger">Records what was applied and what was discarded.</param>
@@ -75,21 +66,10 @@ public sealed class OrderStatusChangedConsumer(
             message.Version);
     }
 
-    /// <summary>
-    /// Applies the update, reporting whether it was still the newest word on this
-    /// order.
-    /// </summary>
-    /// <remarks>
-    /// Upsert builds the document it inserts from the equality parts of the filter
-    /// alone, so a message that lost the version comparison is treated as an order
-    /// that has no document yet and the insert collides with the key already
-    /// there. The duplicate key is the answer rather than a failure: a newer
-    /// version is stored, and this one has nothing to add.
-    /// </remarks>
-    /// <param name="filter">Matches the order only at an older version.</param>
-    /// <param name="update">The change to apply.</param>
-    /// <param name="cancellationToken">Cancels the write.</param>
-    /// <returns><see langword="true"/> if the update was applied.</returns>
+    // Upsert builds the document it inserts from the equality parts of the filter
+    // alone, so a message that lost the version comparison looks like an order with
+    // no document yet and collides with the key already there. The duplicate key is
+    // the answer, not a failure: a newer version is stored.
     private async Task<bool> TryApplyAsync(
         FilterDefinition<OrderStatusDocument> filter,
         UpdateDefinition<OrderStatusDocument> update,

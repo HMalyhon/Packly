@@ -6,20 +6,9 @@ namespace Packly.Contracts;
 /// The publicly visible status of an order.
 /// </summary>
 /// <remarks>
-/// <para>
-/// This is the contract the read model and the live status page are built on,
-/// and it is deliberately not the same thing as the orchestrator's internal
-/// saga states. The saga distinguishes "waiting for payment" from "payment
-/// authorised"; a customer only ever needs to see milestones that have been
-/// reached. Keeping the two separate means the saga can gain intermediate
-/// states without breaking every consumer.
-/// </para>
-/// <para>
-/// Serialised by name everywhere, because the attribute travels with the type
-/// rather than with one serializer's configuration. An ordinal on the wire
-/// forces every consumer to keep a copy of this list, and silently means
-/// something else the day a value is inserted in the middle.
-/// </para>
+/// Milestones a customer sees, not the orchestrator's internal saga states. The
+/// saga distinguishes "waiting for payment" from "payment authorised"; keeping
+/// the two apart lets it gain intermediate states without breaking a consumer.
 /// </remarks>
 [JsonConverter(typeof(JsonStringEnumConverter<OrderStatus>))]
 public enum OrderStatus

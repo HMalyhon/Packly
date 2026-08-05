@@ -6,10 +6,7 @@ namespace Packly.Api.Features.Orders;
 /// <param name="Items">The orders on this page, most recently updated first.</param>
 /// <param name="Page">The page number returned, starting at 1.</param>
 /// <param name="PageSize">How many orders a full page holds.</param>
-/// <param name="Total">
-/// How many orders match the filter in total. Returned so a caller can size a
-/// pager without walking to the end, at the cost of a second count query.
-/// </param>
+/// <param name="Total">Total matching the filter, at the cost of a second query.</param>
 public sealed record OrderPageResponse(
     IReadOnlyList<OrderSummaryResponse> Items,
     int Page,

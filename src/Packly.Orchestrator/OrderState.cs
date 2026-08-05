@@ -7,30 +7,21 @@ namespace Packly.Orchestrator;
 /// One order's position in the workflow, as persisted between messages.
 /// </summary>
 /// <remarks>
-/// A saga instance holds only what later steps need to make decisions. It is not
-/// a copy of the order: the write model already owns that, and duplicating it
-/// here would create a second thing to keep correct.
+/// Holds only what a later step needs to decide something. It is not a copy of
+/// the order - the write model owns that - and every field here is here because
+/// the answer to some message arrives long after the question was asked.
 /// </remarks>
 public sealed class OrderState : SagaStateMachineInstance
 {
-    /// <summary>
-    /// Gets or sets the saga's identity, which is the order id. Correlating on the
-    /// order rather than a new key is what lets any service's message about an
-    /// order find the right instance.
-    /// </summary>
+    /// <summary>Gets or sets the saga's identity, which is the order id.</summary>
     public Guid CorrelationId { get; set; }
 
     /// <summary>
     /// Gets or sets the SQL Server rowversion used for optimistic concurrency.
     /// </summary>
     /// <remarks>
-    /// Maintained by the database, which stamps a new value on every update. That
-    /// matters: MassTransit's Entity Framework repository ignores
-    /// <c>ISagaVersion</c> - only the document-database repositories honour it -
-    /// and relies on Entity Framework's own concurrency token instead. A plain int
-    /// that nothing increments would produce a concurrency check that always
-    /// passes. Deliberately distinct from <see cref="StatusVersion"/>: this counts
-    /// database writes, that counts published transitions.
+    /// Counts database writes, unlike <see cref="StatusVersion"/>, which counts
+    /// published transitions. See OrderStateMap for why it is a rowversion.
     /// </remarks>
     public byte[] RowVersion { get; set; } = [];
 
@@ -44,46 +35,28 @@ public sealed class OrderState : SagaStateMachineInstance
     public decimal Total { get; set; }
 
     /// <summary>
-    /// Gets or sets the handle for the authorised payment, empty until there is one.
+    /// Gets or sets the handle for the authorised payment, empty until there is
+    /// one. A refund has to name the authorisation it reverses, and by the time
+    /// stock fails that happened several messages ago.
     /// </summary>
-    /// <remarks>
-    /// Kept because a refund has to name the authorisation it reverses, and by the
-    /// time stock fails the authorisation happened several messages ago. This is
-    /// the whole reason compensation needs saga state rather than a stateless
-    /// reaction to the failure event.
-    /// </remarks>
     public string PaymentReference { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets why the order is being cancelled, empty unless it is.
+    /// Gets or sets why the order is being cancelled, empty unless it is. Held
+    /// over the refund round trip, because the confirmation does not echo it back.
     /// </summary>
-    /// <remarks>
-    /// Held over the refund round trip. The customer is told nothing until the
-    /// reversal is confirmed, and by then the event that explains why has long been
-    /// handled. The command carries the reason for the payment service's own
-    /// record, but the confirmation does not echo it back, so the saga is the only
-    /// thing that still knows it when the answer arrives.
-    /// </remarks>
     public string CancellationReason { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the lines the order was placed for.
+    /// Gets or sets the lines the order was placed for. Carried because inventory
+    /// needs them and reading them back out of the write model would give the
+    /// orchestrator a dependency on another service's database.
     /// </summary>
-    /// <remarks>
-    /// Carried because the inventory service needs them and the saga is the only
-    /// thing that still knows the order by the time stock is reserved. Reading
-    /// them back out of the write model instead would give the orchestrator a
-    /// dependency on another service's database, which is the coupling this
-    /// architecture is arranged to avoid.
-    /// </remarks>
     public List<OrderLine> Lines { get; set; } = [];
 
     /// <summary>
     /// Gets or sets how many status changes have been published for this order.
+    /// Stamped onto each one so the projection can discard a stale message.
     /// </summary>
-    /// <remarks>
-    /// Stamped onto every OrderStatusChanged so the projection can discard a
-    /// redelivered or out-of-order message instead of moving an order backwards.
-    /// </remarks>
     public int StatusVersion { get; set; }
 }

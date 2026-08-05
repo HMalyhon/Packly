@@ -8,16 +8,8 @@ namespace Packly.Api.Persistence;
 /// The write-side database: orders as they are recorded, not as they are queried.
 /// </summary>
 /// <remarks>
-/// <para>
-/// Nothing reads from here to answer a user's question. Queries will be served
-/// from the MongoDB projection, which is the whole point of separating the two
-/// models.
-/// </para>
-/// <para>
-/// This context also owns the MassTransit outbox tables, and that is deliberate:
-/// an outbox only works if the message is written in the same transaction as the
-/// data that justifies it.
-/// </para>
+/// Also owns the MassTransit outbox tables, deliberately: an outbox only works if
+/// the message is written in the same transaction as the data that justifies it.
 /// </remarks>
 /// <param name="options">Provider and connection configuration.</param>
 public sealed class OrdersDbContext(DbContextOptions<OrdersDbContext> options)

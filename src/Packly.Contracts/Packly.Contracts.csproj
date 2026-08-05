@@ -1,13 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    The message schemas every service exchanges. Services share these, their
-    broker configuration (Packly.Messaging) and the read model's schema
-    (Packly.ReadModel) - three contracts, and no shared domain logic or write-side
-    persistence between them.
-
-    Deliberately has zero package dependencies: a contracts assembly that drags
-    in a transport or a serializer couples every consumer to that choice.
+    The message schemas every service exchanges. Zero package dependencies: a
+    contracts assembly that drags in a transport or a serializer couples every
+    consumer to that choice.
   -->
 
   <PropertyGroup>

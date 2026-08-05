@@ -5,17 +5,9 @@ namespace Packly.Api.Domain;
 /// for.
 /// </summary>
 /// <remarks>
-/// <para>
-/// This is the write model, and it is shaped for correctness rather than for
-/// reading. Queries will be served from the projection in MongoDB instead, which
-/// is what lets this type stay normalised and free of display concerns.
-/// </para>
-/// <para>
-/// Deliberately carries no status. How far an order has travelled through the
-/// workflow is the orchestrator's business, and a copy here would be a second
-/// source of truth that nothing updates - permanently stuck at "Submitted" while
-/// the real answer moved on.
-/// </para>
+/// Deliberately carries no status. How far an order has travelled is the
+/// orchestrator's business, and a copy here would be a second source of truth
+/// that nothing updates - stuck at "Submitted" while the real answer moved on.
 /// </remarks>
 public sealed class Order
 {
@@ -59,11 +51,7 @@ public sealed class Order
     /// <param name="lines">The requested lines; at least one is required.</param>
     /// <param name="submittedAt">When the order was accepted.</param>
     /// <returns>The new order.</returns>
-    /// <exception cref="ArgumentException">
-    /// Thrown when no lines are supplied. The endpoint rejects this case first and
-    /// returns a validation problem; the guard exists so the invariant holds even
-    /// if the aggregate is ever constructed from somewhere else.
-    /// </exception>
+    /// <exception cref="ArgumentException">No lines were supplied.</exception>
     public static Order Submit(
         string customerId,
         IEnumerable<OrderItem> lines,

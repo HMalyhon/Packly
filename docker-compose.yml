@@ -1,5 +1,4 @@
-# Backing services for Packly.
-# Application services are added to this file by the commits that introduce them.
+# Backing and application services for Packly.
 #
 # Every value has a working default, so a fresh clone runs with `docker compose up`
 # and no setup. Copy .env.example to .env to override anything.
@@ -78,8 +77,8 @@ services:
       retries: 10
       start_period: 20s
 
-  # Both sides of the split: accepts orders into SQL Server, answers queries from
-  # MongoDB. The live status page arrives in a later commit.
+  # Both sides of the split: accepts orders into SQL Server, answers queries
+  # from MongoDB.
   api:
     build:
       # Root context, because the build needs Directory.Build.props and the
