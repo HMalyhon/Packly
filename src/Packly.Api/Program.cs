@@ -18,8 +18,12 @@ builder.Services.AddDbContext<OrdersDbContext>(options =>
 // The read side. Written by the projection service, only queried here.
 builder.Services.AddPacklyReadModel(builder.Configuration);
 
+builder.Services.AddSignalR();
+
 builder.Services.AddMassTransit(bus =>
 {
+    bus.AddConsumer<OrderStatusBroadcaster>();
+
     // The transactional outbox is the reason this API can promise that an order
     // and its OrderSubmitted event are either both recorded or neither is.
     // Publishing writes a row through the same DbContext, so the message is
@@ -37,7 +41,14 @@ builder.Services.AddMassTransit(bus =>
     {
         rabbit.ConfigurePacklyHost(builder.Configuration);
 
-        rabbit.ConfigureEndpoints(context);
+        // Temporary and named per instance, unlike every other service's queue.
+        // A browser watching an order is connected to one API replica, and any
+        // replica may hold it, so all of them need every status change. A shared
+        // durable queue would make replicas competing consumers and deliver each
+        // update to exactly one - the other browsers would simply never hear.
+        rabbit.ReceiveEndpoint(
+            new TemporaryEndpointDefinition(),
+            endpoint => endpoint.ConfigureConsumer<OrderStatusBroadcaster>(context));
     });
 });
 
@@ -92,18 +103,20 @@ app.UseExceptionHandler(new ExceptionHandlerOptions
 
 app.UseStatusCodePages();
 
+// The live order page is served from wwwroot at the root, so opening the
+// container's port lands a reviewer on the demo rather than on a schema.
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.UseSwagger();
 app.UseSwaggerUI(options =>
 {
     options.SwaggerEndpoint("/swagger/v1/swagger.json", "Packly v1");
-
-    // Served at the root: opening the container's port lands a reviewer straight
-    // on something they can use.
-    options.RoutePrefix = string.Empty;
 });
 
 app.MapSubmitOrder();
 app.MapGetOrderStatus();
 app.MapListOrders();
+app.MapHub<OrderHub>(OrderHub.Path);
 
 await app.RunAsync();

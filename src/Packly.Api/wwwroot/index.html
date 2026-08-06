@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Packly</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%232563eb'/><path d='M6 11l10-5 10 5v10l-10 5-10-5z' fill='none' stroke='%23fff' stroke-width='2' stroke-linejoin='round'/><path d='M6 11l10 5 10-5M16 16v10' stroke='%23fff' stroke-width='2' fill='none' stroke-linejoin='round'/></svg>">
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff; --fg: #1a1a1a; --muted: #6b7280; --line: #e5e7eb;
+    --accent: #2563eb; --ok: #15803d; --bad: #b91c1c; --card: #f9fafb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1115; --fg: #e7e9ee; --muted: #9099ab; --line: #262b36;
+      --accent: #6b9bff; --ok: #4ade80; --bad: #f87171; --card: #161a22;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 2rem 1rem; background: var(--bg); color: var(--fg);
+    font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 46rem; margin: 0 auto; }
+  h1 { font-size: 1.5rem; margin: 0 0 .25rem; letter-spacing: -.01em; }
+  p.lede { margin: 0 0 1.75rem; color: var(--muted); }
+  fieldset { border: 1px solid var(--line); border-radius: .6rem; padding: 1rem 1.1rem 1.2rem; margin: 0 0 1.5rem; }
+  legend { padding: 0 .4rem; color: var(--muted); font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; }
+  .presets { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1rem; }
+  button {
+    font: inherit; border: 1px solid var(--line); background: var(--card); color: var(--fg);
+    border-radius: .45rem; padding: .5rem .85rem; cursor: pointer;
+  }
+  button:hover:not(:disabled) { border-color: var(--accent); }
+  button[disabled] { opacity: .5; cursor: default; }
+  button.go { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: .75rem; margin-bottom: 1rem; }
+  label { display: block; font-size: .78rem; color: var(--muted); margin-bottom: .25rem; }
+  input {
+    font: inherit; width: 100%; padding: .45rem .55rem; border-radius: .4rem;
+    border: 1px solid var(--line); background: var(--bg); color: var(--fg);
+  }
+  #meta { font-size: .85rem; color: var(--muted); margin: 0 0 1rem; min-height: 1.4em; }
+  #meta code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .95em; }
+  ol#timeline { list-style: none; margin: 0; padding: 0; }
+  ol#timeline li {
+    position: relative; padding: 0 0 1.15rem 1.6rem; border-left: 2px solid var(--line);
+  }
+  ol#timeline li:last-child { border-left-color: transparent; padding-bottom: 0; }
+  ol#timeline li::before {
+    content: ""; position: absolute; left: -.44rem; top: .34rem; width: .7rem; height: .7rem;
+    border-radius: 50%; background: var(--accent);
+  }
+  ol#timeline li.done::before { background: var(--ok); }
+  ol#timeline li.failed::before { background: var(--bad); }
+  ol#timeline li.pending::before { background: var(--line); }
+  ol#timeline li.pending { color: var(--muted); }
+  .status { font-weight: 600; }
+  .when { color: var(--muted); font-size: .8rem; margin-left: .5rem; }
+  .desc { color: var(--muted); font-size: .9rem; }
+  .empty { color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Packly</h1>
+  <p class="lede">Place an order and watch the workflow move it, pushed over SignalR as each service reports in.</p>
+
+  <fieldset>
+    <legend>Place an order</legend>
+    <div class="presets">
+      <button type="button" data-preset="happy">Happy path</button>
+      <button type="button" data-preset="declined">Decline payment</button>
+      <button type="button" data-preset="soldout">Fail on stock</button>
+    </div>
+    <div class="grid">
+      <div><label for="customerId">Customer</label><input id="customerId" value="ada"></div>
+      <div><label for="sku">SKU</label><input id="sku" value="MUG-1"></div>
+      <div><label for="name">Name</label><input id="name" value="Mug"></div>
+      <div><label for="quantity">Quantity</label><input id="quantity" type="number" min="1" value="2"></div>
+      <div><label for="unitPrice">Unit price</label><input id="unitPrice" type="number" min="0" step="0.01" value="4.50"></div>
+    </div>
+    <button class="go" id="submit" type="button" disabled>Place order</button>
+  </fieldset>
+
+  <p id="meta"></p>
+  <ol id="timeline"><li class="pending"><span class="empty">No order yet.</span></li></ol>
+</main>
+<!-- Pinned to an exact version and checked against its hash: the browser
+     refuses the file if it does not match, so the CDN cannot change what
+     this page runs. -->
+<script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@10.0.0/dist/browser/signalr.min.js"
+        integrity="sha384-WlPNGnp2GG/eMuGnbuG2p5ov9pzHsqoPQbzjOz61V608d7JfDa+3abt0YOoyUwU5"
+        crossorigin="anonymous"></script>
+<script src="app.js"></script>
+</body>
+</html>

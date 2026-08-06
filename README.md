@@ -10,8 +10,9 @@ Six .NET services, three backing services, one command to run the lot:
 docker compose up --build
 ```
 
-Then open <http://localhost:8080> for Swagger, and
-<http://localhost:15672> (`packly` / `packly`) to watch the messages move.
+Then open <http://localhost:8080>, place an order, and watch it move. Swagger is
+at <http://localhost:8080/swagger>, and the broker's own UI at
+<http://localhost:15672> (`packly` / `packly`).
 
 ---
 
@@ -42,26 +43,35 @@ flowchart TB
 
     browser -->|"POST /api/orders"| write
     browser -->|"GET /api/orders/id"| read
+    api -.->|"SignalR /hubs/orders"| browser
     write --> mssql
     read --> mongo
     write -.->|"OrderSubmitted<br/>(transactional outbox)"| rabbit
     rabbit --> orch
     orch <--> mssql
-    orch -->|"AuthorizePayment<br/>RefundPayment"| pay
-    orch -->|"ReserveStock<br/>PackOrder"| inv
+    orch -->|"AuthorizePayment, RefundPayment<br/>ReserveStock, PackOrder"| rabbit
+    rabbit --> pay
+    rabbit --> inv
     pay -.->|events| rabbit
     inv -.->|events| rabbit
     orch -.->|"OrderStatusChanged"| rabbit
     rabbit --> notify
     rabbit --> proj
+    rabbit --> api
     proj --> mongo
 ```
 
+The page is the shortest way to see all of it at once: submit an order and the
+statuses arrive as each service reports in, pushed over SignalR rather than
+polled. The three buttons pick the happy path, a declined payment and a stock
+failure.
+
 Commands are **sent** to a named queue, because exactly one service can carry
 them out. Events are **published**, because the publisher has no business knowing
-who cares. That distinction is the whole reason `Packly.Notification` and
-`Packly.Projection` could be added — and can be removed — without the
-orchestrator changing at all.
+who cares. That distinction is the whole reason `Packly.Notification`, `Packly.Projection`
+and the API's SignalR bridge could each be added — and can be removed — without
+the orchestrator changing at all. Three subscribers, one event, no publisher
+that knows who is listening.
 
 ## The saga
 
@@ -97,8 +107,10 @@ operation, and the state machine is what remembers one is owed.
 
 ## Try it
 
-Both failure paths are deterministic, so you can trigger them on demand rather
-than waiting for one.
+The page at <http://localhost:8080> does all of this: pick a preset, place the
+order, watch it move. The same thing over HTTP, for the curious — both failure
+paths are deterministic, so you can trigger either on demand rather than waiting
+for one.
 
 **Happy path** — reaches `Completed`:
 
@@ -166,7 +178,8 @@ docker compose stop sqlserver
 curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8080/api/orders/ORDER_ID  # 200
 curl -s -o /dev/null -w '%{http_code}\n' 'http://localhost:8080/api/orders'         # 200
 
-# writes: 500, because that is the side that is down
+# writes: 500, because that is the side that is down. Takes ~15s: Entity
+# Framework retries a connection failure before giving up.
 curl -s -o /dev/null -w '%{http_code}\n' -X POST http://localhost:8080/api/orders \
   -H 'content-type: application/json' \
   -d '{"customerId":"ada","items":[{"sku":"MUG-1","name":"Mug","quantity":1,"unitPrice":4.50}]}'
@@ -208,13 +221,13 @@ No containers, a few seconds.
 
 | Project | Role |
 | --- | --- |
-| `Packly.Api` | Accepts orders into SQL Server, answers queries from MongoDB |
+| `Packly.Api` | Accepts orders into SQL Server, answers queries from MongoDB, pushes status to browsers |
 | `Packly.Orchestrator` | Owns the saga; the only publisher of `OrderStatusChanged` |
 | `Packly.Payment` | Authorises and refunds |
 | `Packly.Inventory` | Reserves stock and packs |
 | `Packly.Notification` | "Emails" the customer on outcomes |
 | `Packly.Projection` | Builds the read model |
-| `Packly.Contracts` | Message schemas. No package dependencies at all |
+| `Packly.Contracts` | Message schemas, and nothing else: no transport, no serializer |
 | `Packly.Messaging` | Broker connection, shared by every service |
 | `Packly.ReadModel` | Read model schema and the serialisation it assumes |
 
@@ -238,8 +251,8 @@ twice.
 **An in-memory outbox on the two workers that publish.** A different thing
 entirely: it holds what a consumer publishes until the consumer returns
 successfully, so a retried attempt cannot leave an event behind from the attempt
-that failed. The notification service does not need it, because it publishes
-nothing.
+that failed. The notification and projection services publish nothing, so neither
+needs one.
 
 **Optimistic concurrency via `rowversion`, not `ISagaVersion`.** MassTransit's
 Entity Framework repository ignores `ISagaVersion` — only the document-database
@@ -271,8 +284,9 @@ for a repository anyone should be able to clone and run.
 This is a portfolio project, and these are deliberate rather than overlooked.
 
 - **No authentication or authorisation.** Every endpoint is anonymous, the query
-  endpoints return anyone's orders, and `customerId` is an unverified string on
-  the request. Real scoping would need an identity the read model does not carry.
+  endpoints return anyone's orders, any connection can ask the hub to watch any
+  order id, and `customerId` is an unverified string on the request. Real scoping
+  would need an identity the read model does not carry.
 - **A stuck saga stays stuck.** There are no timeouts or scheduled messages. If
   the answer to a command is never published, the order waits forever with no
   fault raised — and in `Refunding` that means held funds and a customer whose
@@ -288,14 +302,20 @@ This is a portfolio project, and these are deliberate rather than overlooked.
   collection this size a second index is not worth it.
 - **The payment and warehouse services are simulations** with fixed rules and
   artificial delays, so the flow is observable and reproducible.
+- **The status page needs the internet** for the SignalR client. Vendoring it
+  would fix that at the cost of a minified blob in the repository, which is a
+  worse trade for something read more than it is run offline.
 
 ## Requirements
 
 Docker, and around 2 GB of free memory. The nine containers idle at roughly
-1.6 GB together, half of that SQL Server. Nothing else is needed: every service
-builds inside its own image, and every value has a working default, so a fresh
-clone runs without a `.env` file. Copy `.env.example` to `.env` to change ports
-or credentials.
+1.6 GB together, half of that SQL Server. Every service builds inside its own
+image and every value has a working default, so a fresh clone runs without a
+`.env` file. Copy `.env.example` to `.env` to change ports or credentials.
+
+The status page loads the SignalR client from a CDN, pinned to one version and
+checked against its hash, so that one page needs an internet connection. The API
+and every other service do not.
 
 The first start is slow while SQL Server initialises; compose health checks gate
 the services that depend on it, so `up` is still one command.

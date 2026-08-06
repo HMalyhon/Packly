@@ -133,7 +133,6 @@ public sealed class OrderStateMachineTests
         await harness.Bus.Publish(new StockReserved(orderId));
         await harness.Bus.Publish(new OrderPacked(orderId, "PK-1"));
 
-
         Assert.True(await SagaOf(harness).Exists(orderId, x => x.Completed) is not null);
 
         var before = (await StatusesFor(harness, orderId)).Count;
