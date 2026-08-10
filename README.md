@@ -1,5 +1,7 @@
 # Packly
 
+[![CI](https://github.com/HMalyhon/Packly/actions/workflows/ci.yml/badge.svg)](https://github.com/HMalyhon/Packly/actions/workflows/ci.yml)
+
 Event-driven order processing with CQRS. An order is placed over HTTP, a saga
 decides what happens to it, and four independent services do the work and react
 to the results — none of them knowing the sequence they sit in.

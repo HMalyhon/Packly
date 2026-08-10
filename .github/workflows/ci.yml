@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Reads the repository and nothing more: this workflow publishes no package,
+# pushes no commit, and comments on no pull request.
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore
+
+      # Warnings are already errors in Directory.Build.props, so there is no
+      # flag here: what fails in CI fails locally, for the same reason. What
+      # this adds is the clean tree - an incremental build skips the projects
+      # it believes unchanged, and a violation inside one stays quiet until
+      # somebody builds from scratch. That happened, and a committed style
+      # error is exactly what a reviewer opens the repository to.
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      # No containers and no services. The saga tests run against an in-memory
+      # bus and saga repository, so what is under test here needs only the SDK.
+      - name: Test
+        run: dotnet test --no-build --configuration Release
