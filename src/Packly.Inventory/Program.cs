@@ -18,10 +18,10 @@ builder.Services.AddMassTransit(bus =>
         // service by a single queue name.
         rabbit.ReceiveEndpoint(QueueNames.Inventory, endpoint =>
         {
-            // Outermost, so it wraps the retry: a retried attempt cannot leave a
-            // StockReserved behind from the attempt that failed.
-            endpoint.UseInMemoryOutbox(context);
+            // Inside the retry, not around it: an outbox that wraps the retry
+            // flushes the failed attempt's StockReserved along with the good one.
             endpoint.UseMessageRetry(retry => retry.Interval(3, TimeSpan.FromMilliseconds(200)));
+            endpoint.UseInMemoryOutbox(context);
 
             endpoint.ConfigureConsumer<ReserveStockConsumer>(context);
             endpoint.ConfigureConsumer<PackOrderConsumer>(context);

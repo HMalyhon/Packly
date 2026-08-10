@@ -51,8 +51,8 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
         // warehouse whose stock ran out between two deliveries would answer
         // differently the second time, and StockUnavailable would arrive at an
         // order already packed - a combination no list contained, faulting an
-        // otherwise healthy order. The default belongs with the rule, not with the
-        // eight states that would each have to remember it.
+        // otherwise healthy order. The default belongs with the rule, not with
+        // every state that would otherwise have to remember it.
         OnUnhandledEvent(context =>
         {
             logger.LogInformation(

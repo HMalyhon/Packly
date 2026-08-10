@@ -251,8 +251,10 @@ twice.
 **An in-memory outbox on the two workers that publish.** A different thing
 entirely: it holds what a consumer publishes until the consumer returns
 successfully, so a retried attempt cannot leave an event behind from the attempt
-that failed. The notification and projection services publish nothing, so neither
-needs one.
+that failed. Order matters — it is configured *inside* the retry, because an
+outbox wrapping the retry spans every attempt and flushes the failed one's
+publishes along with the good one's. The notification and projection services
+publish nothing, so neither needs one.
 
 **Optimistic concurrency via `rowversion`, not `ISagaVersion`.** MassTransit's
 Entity Framework repository ignores `ISagaVersion` — only the document-database

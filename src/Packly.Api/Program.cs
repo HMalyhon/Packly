@@ -67,10 +67,10 @@ builder.Services.AddSwaggerGen(options =>
     options.MapType<decimal>(() => new OpenApiSchema { Type = JsonSchemaType.Number, Format = "decimal" });
     options.MapType<decimal?>(() => new OpenApiSchema { Type = JsonSchemaType.Number, Format = "decimal" });
 
-    // Surfaces the XML documentation from the source in the generated document,
-    // which is the reason GenerateDocumentationFile is on for every project.
-    var documentation = Path.Combine(AppContext.BaseDirectory, "Packly.Api.xml");
-    if (File.Exists(documentation))
+    // Every project's documentation, not just this one: the response types and
+    // the OrderStatus values they carry are declared in Packly.Contracts and
+    // Packly.ReadModel, and reading only Packly.Api.xml left them undescribed.
+    foreach (var documentation in Directory.GetFiles(AppContext.BaseDirectory, "Packly.*.xml"))
     {
         options.IncludeXmlComments(documentation);
     }

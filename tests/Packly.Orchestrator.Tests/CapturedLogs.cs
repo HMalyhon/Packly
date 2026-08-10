@@ -14,15 +14,15 @@ namespace Packly.Orchestrator.Tests;
 /// </remarks>
 internal sealed class CapturedLogs : ILoggerProvider
 {
-    private readonly List<string> messages = [];
+    private readonly List<string> _messages = [];
 
     public IReadOnlyList<string> Messages
     {
         get
         {
-            lock (this.messages)
+            lock (_messages)
             {
-                return [.. this.messages];
+                return [.. _messages];
             }
         }
     }
@@ -35,9 +35,9 @@ internal sealed class CapturedLogs : ILoggerProvider
 
     private void Add(string message)
     {
-        lock (this.messages)
+        lock (_messages)
         {
-            this.messages.Add(message);
+            _messages.Add(message);
         }
     }
 
