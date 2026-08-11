@@ -38,3 +38,17 @@ jobs:
       # bus and saga repository, so what is under test here needs only the SDK.
       - name: Test
         run: dotnet test --no-build --configuration Release
+
+  # The README's first instruction is `docker compose up --build`, and nothing
+  # checked it. Every Dockerfile hand-maintains its own list of COPY lines for
+  # the project files it restores; add a project reference without adding the
+  # COPY beside it and the SDK build above still passes while the documented
+  # command fails for everyone who clones the repository.
+  images:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build images
+        run: docker compose build
