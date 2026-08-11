@@ -14,15 +14,15 @@ namespace Packly.Orchestrator.Tests;
 /// </remarks>
 internal sealed class CapturedLogs : ILoggerProvider
 {
-    private readonly List<string> _messages = [];
+    private readonly List<Entry> _entries = [];
 
-    public IReadOnlyList<string> Messages
+    public IReadOnlyList<Entry> Entries
     {
         get
         {
-            lock (_messages)
+            lock (_entries)
             {
-                return [.. _messages];
+                return [.. _entries];
             }
         }
     }
@@ -33,13 +33,22 @@ internal sealed class CapturedLogs : ILoggerProvider
     {
     }
 
-    private void Add(string message)
+    private void Add(Entry entry)
     {
-        lock (_messages)
+        lock (_entries)
         {
-            _messages.Add(message);
+            _entries.Add(entry);
         }
     }
+
+    /// <summary>
+    /// One captured line. The level is part of it because the level is part of
+    /// what the saga decided: an ignored event is reported as tolerated, not as
+    /// routine.
+    /// </summary>
+    /// <param name="Level">The level the line was written at.</param>
+    /// <param name="Message">The formatted message.</param>
+    internal sealed record Entry(LogLevel Level, string Message);
 
     private sealed class Sink(CapturedLogs owner) : ILogger
     {
@@ -56,7 +65,7 @@ internal sealed class CapturedLogs : ILoggerProvider
             Func<TState, Exception?, string> formatter)
         {
             ArgumentNullException.ThrowIfNull(formatter);
-            owner.Add(formatter(state, exception));
+            owner.Add(new Entry(logLevel, formatter(state, exception)));
         }
     }
 }

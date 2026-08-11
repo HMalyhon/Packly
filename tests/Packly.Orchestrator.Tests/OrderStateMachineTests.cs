@@ -150,20 +150,25 @@ public sealed class OrderStateMachineTests
         // event is recorded nowhere else, so the log line is the evidence. Waited
         // for rather than asserted outright - publishing returns before the saga
         // has read the message.
-        Assert.True(await LoggedAsync(logs, "ignored StockReserved in state Completed"));
-        Assert.True(await LoggedAsync(logs, "ignored PaymentRefunded in state Completed"));
+        //
+        // The level is asserted, not incidental. Ignoring is deliberate but not
+        // routine, and information is where a genuinely missing transition would
+        // go unnoticed.
+        Assert.True(await LoggedAsync(logs, LogLevel.Warning, "ignored StockReserved in state Completed"));
+        Assert.True(await LoggedAsync(logs, LogLevel.Warning, "ignored PaymentRefunded in state Completed"));
 
         Assert.True(await SagaOf(harness).Exists(orderId, x => x.Completed) is not null);
         Assert.Equal(before, (await StatusesFor(harness, orderId)).Count);
     }
 
-    private static async Task<bool> LoggedAsync(CapturedLogs logs, string expected)
+    private static async Task<bool> LoggedAsync(CapturedLogs logs, LogLevel level, string expected)
     {
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
 
         while (!timeout.IsCancellationRequested)
         {
-            if (logs.Messages.Any(message => message.Contains(expected, StringComparison.Ordinal)))
+            if (logs.Entries.Any(entry =>
+                entry.Level == level && entry.Message.Contains(expected, StringComparison.Ordinal)))
             {
                 return true;
             }

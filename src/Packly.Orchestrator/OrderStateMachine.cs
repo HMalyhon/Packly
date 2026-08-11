@@ -53,9 +53,14 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
         // order already packed - a combination no list contained, faulting an
         // otherwise healthy order. The default belongs with the rule, not with
         // every state that would otherwise have to remember it.
+        //
+        // Warning rather than information, because tolerated is not expected.
+        // There are no saga timeouts, so a transition genuinely missing from the
+        // machine strands an order in silence, and information is the level that
+        // silence hides in.
         OnUnhandledEvent(context =>
         {
-            logger.LogInformation(
+            logger.LogWarning(
                 "Order {OrderId} ignored {Event} in state {State}",
                 context.Saga.CorrelationId,
                 context.Event.Name,
