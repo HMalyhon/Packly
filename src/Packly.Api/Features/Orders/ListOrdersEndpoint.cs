@@ -16,12 +16,6 @@ namespace Packly.Api.Features.Orders;
 /// </remarks>
 public static class ListOrdersEndpoint
 {
-    private const int DefaultPageSize = 20;
-
-    // A cap rather than a suggestion: without one a single request can ask the
-    // database for the whole collection and the API will serialise all of it.
-    private const int MaxPageSize = 100;
-
     /// <summary>
     /// Maps the order list query.
     /// </summary>
@@ -45,36 +39,9 @@ public static class ListOrdersEndpoint
         CancellationToken cancellationToken,
         OrderStatus? status = null,
         int page = 1,
-        int pageSize = DefaultPageSize)
+        int pageSize = ListOrdersQuery.DefaultPageSize)
     {
-        var errors = new Dictionary<string, string[]>();
-
-        if (pageSize is < 1 or > MaxPageSize)
-        {
-            errors[nameof(pageSize)] = [$"Page size must be between 1 and {MaxPageSize}."];
-        }
-
-        // Widened before multiplying, because the product of two valid ints is not
-        // necessarily one. page=21474838 with a page size of 100 wrapped to a
-        // negative skip, which the driver rejected as an unhandled 500 - a bad
-        // request escaping as a server error this signature says cannot happen.
-        var skip = ((long)page - 1) * pageSize;
-
-        if (page < 1 || skip > int.MaxValue)
-        {
-            errors[nameof(page)] = ["Page must be 1 or greater, and within range for the page size."];
-        }
-
-        // An undefined value casts cleanly from its number, so ?status=99 binds
-        // without complaint and then matches nothing. Reported as the bad request
-        // it is rather than answered with an empty page that implies there are no
-        // such orders.
-        if (status is not null && !Enum.IsDefined(status.Value))
-        {
-            errors[nameof(status)] = ["Unknown order status."];
-        }
-
-        if (errors.Count > 0)
+        if (!ListOrdersQuery.TryValidate(status, page, pageSize, out var skip, out var errors))
         {
             return TypedResults.ValidationProblem(errors);
         }
@@ -92,7 +59,7 @@ public static class ListOrdersEndpoint
         var documents = await collection
             .Find(filter)
             .SortByDescending(document => document.UpdatedAt)
-            .Skip((int)skip)
+            .Skip(skip)
             .Limit(pageSize)
             .ToListAsync(cancellationToken);
 
