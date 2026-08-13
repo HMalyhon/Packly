@@ -32,6 +32,12 @@
     <PackageReference Include="Swashbuckle.AspNetCore" />
   </ItemGroup>
 
+  <!-- The validation rules are internal: nothing outside this assembly calls them,
+       and the tests are the only reason they are reachable at all. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Packly.Api.Tests" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Packly.Contracts\Packly.Contracts.csproj" />
     <ProjectReference Include="..\Packly.Messaging\Packly.Messaging.csproj" />
