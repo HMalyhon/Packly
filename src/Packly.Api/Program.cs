@@ -1,6 +1,7 @@
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
+using OpenTelemetry.Trace;
 using Packly.Api.Features.Orders;
 using Packly.Api.Persistence;
 using Packly.Messaging;
@@ -19,6 +20,12 @@ builder.Services.AddDbContext<OrdersDbContext>(options =>
 builder.Services.AddPacklyReadModel(builder.Configuration);
 
 builder.Services.AddSignalR();
+
+// The HTTP request is where an order's trace starts, so this is the one service
+// that instruments ASP.NET Core as well as the bus.
+builder.Services.AddPacklyTelemetry(
+    "packly-api",
+    tracing => tracing.AddAspNetCoreInstrumentation());
 
 builder.Services.AddMassTransit(bus =>
 {

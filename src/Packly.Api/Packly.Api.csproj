@@ -30,6 +30,8 @@
     <!-- Generates the OpenAPI document and serves the UI, so reviewers can
          exercise the API without reaching for curl. -->
     <PackageReference Include="Swashbuckle.AspNetCore" />
+    <!-- Only this service handles HTTP, so only this one traces it. -->
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
   </ItemGroup>
 
   <!-- The validation rules are internal: nothing outside this assembly calls them,

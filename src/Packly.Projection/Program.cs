@@ -12,6 +12,8 @@ var builder = Host.CreateApplicationBuilder(args);
 
 builder.Services.AddPacklyReadModel(builder.Configuration);
 
+builder.Services.AddPacklyTelemetry("packly-projection");
+
 builder.Services.AddMassTransit(bus =>
 {
     bus.AddConsumer<OrderStatusChangedConsumer>();

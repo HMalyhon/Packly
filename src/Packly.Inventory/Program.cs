@@ -5,6 +5,8 @@ using Packly.Messaging;
 
 var builder = Host.CreateApplicationBuilder(args);
 
+builder.Services.AddPacklyTelemetry("packly-inventory");
+
 builder.Services.AddMassTransit(bus =>
 {
     bus.AddConsumer<ReserveStockConsumer>();

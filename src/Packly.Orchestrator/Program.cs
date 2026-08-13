@@ -17,6 +17,8 @@ builder.Services.AddDbContext<OrderStateDbContext>(options =>
 
 builder.Services.AddSingleton(TimeProvider.System);
 
+builder.Services.AddPacklyTelemetry("packly-orchestrator");
+
 builder.Services.AddMassTransit(bus =>
 {
     bus.AddSagaStateMachine<OrderStateMachine, OrderState>()

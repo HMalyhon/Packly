@@ -1,18 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    Bus configuration shared by every service. Deliberately narrow: it takes no
-    dependency on Entity Framework, so the services that have no database do not
-    inherit one by referencing this.
+    How a service reaches the bus, and how that conversation is traced. Still
+    deliberately narrow: no dependency on Entity Framework, so the services with
+    no database do not inherit one by referencing this.
   -->
 
   <PropertyGroup>
-    <Description>Shared RabbitMQ configuration for Packly services.</Description>
+    <Description>Shared broker and tracing configuration for Packly services.</Description>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="MassTransit.RabbitMQ" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
   </ItemGroup>
 
 </Project>

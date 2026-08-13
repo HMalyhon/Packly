@@ -230,11 +230,12 @@ No containers, a few seconds.
 | `Packly.Notification` | "Emails" the customer on outcomes |
 | `Packly.Projection` | Builds the read model |
 | `Packly.Contracts` | Message schemas, and nothing else: no transport, no serializer |
-| `Packly.Messaging` | Broker connection, shared by every service |
+| `Packly.Messaging` | Broker connection and trace export, shared by every service |
 | `Packly.ReadModel` | Read model schema and the serialisation it assumes |
 
 The three shared assemblies are all contracts — what services say to each other,
-how they reach the broker, and what shape the read model has. No shared domain
+how they reach the broker and report what they did, and what shape the read model
+has. No shared domain
 logic, and no shared write-side persistence.
 
 ## Decisions worth explaining

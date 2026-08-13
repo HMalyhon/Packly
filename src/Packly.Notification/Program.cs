@@ -8,6 +8,8 @@ const string QueueName = "packly-notification";
 
 var builder = Host.CreateApplicationBuilder(args);
 
+builder.Services.AddPacklyTelemetry("packly-notification");
+
 builder.Services.AddMassTransit(bus =>
 {
     bus.AddConsumer<OrderStatusChangedConsumer>();
