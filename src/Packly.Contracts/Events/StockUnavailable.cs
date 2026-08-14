@@ -5,9 +5,6 @@ namespace Packly.Contracts.Events;
 /// By this point payment has already been authorised, which is precisely the
 /// situation the saga's compensating refund exists to handle.
 /// </summary>
-/// <param name="OrderId">The order that could not be reserved.</param>
-/// <param name="Sku">The first line that could not be satisfied.</param>
-/// <param name="Reason">Why the line could not be satisfied.</param>
 public sealed record StockUnavailable(
     Guid OrderId,
     string Sku,

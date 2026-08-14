@@ -25,10 +25,8 @@ public sealed class OrderState : SagaStateMachineInstance
     /// </remarks>
     public byte[] RowVersion { get; set; } = [];
 
-    /// <summary>Gets or sets the current state name, persisted as text.</summary>
     public string CurrentState { get; set; } = string.Empty;
 
-    /// <summary>Gets or sets the customer the order belongs to.</summary>
     public string CustomerId { get; set; } = string.Empty;
 
     /// <summary>Gets or sets the order total, needed to authorise payment.</summary>

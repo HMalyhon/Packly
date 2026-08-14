@@ -29,8 +29,7 @@ jobs:
       # flag here: what fails in CI fails locally, for the same reason. What
       # this adds is the clean tree - an incremental build skips the projects
       # it believes unchanged, and a violation inside one stays quiet until
-      # somebody builds from scratch. That happened, and a committed style
-      # error is exactly what a reviewer opens the repository to.
+      # somebody builds from scratch.
       - name: Build
         run: dotnet build --no-restore --configuration Release
 

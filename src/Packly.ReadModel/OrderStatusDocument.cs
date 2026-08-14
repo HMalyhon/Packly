@@ -20,7 +20,6 @@ public sealed class OrderStatusDocument
     [BsonId]
     public Guid OrderId { get; set; }
 
-    /// <summary>Gets or sets the status the order is in now.</summary>
     [BsonRepresentation(BsonType.String)]
     public OrderStatus Status { get; set; }
 
@@ -30,10 +29,8 @@ public sealed class OrderStatusDocument
     /// </summary>
     public int Version { get; set; }
 
-    /// <summary>Gets or sets the customer-facing text for the current status.</summary>
     public string Description { get; set; } = string.Empty;
 
-    /// <summary>Gets or sets when the current status was reached, in UTC.</summary>
     public DateTime UpdatedAt { get; set; }
 
     /// <summary>

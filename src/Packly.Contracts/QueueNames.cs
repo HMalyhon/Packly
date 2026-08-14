@@ -4,10 +4,8 @@ namespace Packly.Contracts;
 /// Names of the queues commands are sent to.
 /// </summary>
 /// <remarks>
-/// Events are published and routed by message type, so a publisher never names a
-/// destination and no event consumer appears here - each of those names its own
-/// endpoint and nothing else needs to know it. Commands are different: they are
-/// sent to one known service, and the sender has to say which.
+/// Commands only. Events route by message type, so a publisher never names a
+/// destination and no event consumer belongs here.
 /// </remarks>
 public static class QueueNames
 {

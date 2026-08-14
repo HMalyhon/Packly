@@ -9,9 +9,7 @@ namespace Packly.Orchestrator.Persistence;
 /// </summary>
 /// <remarks>
 /// Saga state lives in a database rather than in memory so that an order in
-/// flight survives this service being restarted, redeployed or scaled out. That
-/// durability is the difference between a workflow and a sequence of hopeful
-/// method calls.
+/// flight survives this service being restarted, redeployed or scaled out.
 /// </remarks>
 /// <param name="options">Provider and connection configuration.</param>
 public sealed class OrderStateDbContext(DbContextOptions<OrderStateDbContext> options)

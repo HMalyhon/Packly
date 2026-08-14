@@ -11,10 +11,6 @@ namespace Packly.Contracts.Commands;
 /// captured at dispatch would compensate differently before and after that point,
 /// which is why the distinction is worth keeping even in a simulation.
 /// </remarks>
-/// <param name="OrderId">The order being refunded.</param>
-/// <param name="PaymentReference">The authorisation being reversed.</param>
-/// <param name="Amount">The amount to return.</param>
-/// <param name="Reason">Why the order is being called off, for the record.</param>
 public sealed record RefundPayment(
     Guid OrderId,
     string PaymentReference,
