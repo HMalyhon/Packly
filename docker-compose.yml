@@ -77,6 +77,18 @@ services:
       retries: 10
       start_period: 20s
 
+  # Where traces land. Every service exports to it and nothing depends on it: with
+  # the collector down the exporter fails quietly and orders still flow, so it
+  # gates no health check. In-memory and unvolumed - traces last as long as the
+  # container, which is what watching a run needs. Pinned exactly because Jaeger
+  # publishes no major-only tag; 2.x speaks OTLP natively, so there is nothing to
+  # configure.
+  jaeger:
+    image: jaegertracing/jaeger:2.20.0
+    container_name: packly-jaeger
+    ports:
+      - "${JAEGER_UI_PORT:-16686}:16686"
+
   # Both sides of the split: accepts orders into SQL Server, answers queries
   # from MongoDB.
   api:
@@ -96,6 +108,7 @@ services:
       RabbitMq__Host: rabbitmq
       RabbitMq__Username: ${RABBITMQ_USER:-packly}
       RabbitMq__Password: ${RABBITMQ_PASSWORD:-packly}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
     ports:
       - "${API_PORT:-8080}:8080"
     depends_on:
@@ -123,6 +136,7 @@ services:
       RabbitMq__Host: rabbitmq
       RabbitMq__Username: ${RABBITMQ_USER:-packly}
       RabbitMq__Password: ${RABBITMQ_PASSWORD:-packly}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
     depends_on:
       sqlserver:
         condition: service_healthy
@@ -140,6 +154,7 @@ services:
       RabbitMq__Host: rabbitmq
       RabbitMq__Username: ${RABBITMQ_USER:-packly}
       RabbitMq__Password: ${RABBITMQ_PASSWORD:-packly}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -154,6 +169,7 @@ services:
       RabbitMq__Host: rabbitmq
       RabbitMq__Username: ${RABBITMQ_USER:-packly}
       RabbitMq__Password: ${RABBITMQ_PASSWORD:-packly}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -170,6 +186,7 @@ services:
       RabbitMq__Host: rabbitmq
       RabbitMq__Username: ${RABBITMQ_USER:-packly}
       RabbitMq__Password: ${RABBITMQ_PASSWORD:-packly}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -189,6 +206,7 @@ services:
       RabbitMq__Host: rabbitmq
       RabbitMq__Username: ${RABBITMQ_USER:-packly}
       RabbitMq__Password: ${RABBITMQ_PASSWORD:-packly}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
     depends_on:
       mongo:
         condition: service_healthy

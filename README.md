@@ -6,15 +6,16 @@ Event-driven order processing with CQRS. An order is placed over HTTP, a saga
 decides what happens to it, and four independent services do the work and react
 to the results — none of them knowing the sequence they sit in.
 
-Six .NET services, three backing services, one command to run the lot:
+Six .NET services, four backing services, one command to run the lot:
 
 ```bash
 docker compose up --build
 ```
 
 Then open <http://localhost:8080>, place an order, and watch it move. Swagger is
-at <http://localhost:8080/swagger>, and the broker's own UI at
-<http://localhost:15672> (`packly` / `packly`).
+at <http://localhost:8080/swagger>, the broker's own UI at
+<http://localhost:15672> (`packly` / `packly`), and the traces at
+<http://localhost:16686>.
 
 ---
 
@@ -206,6 +207,32 @@ The same holds for the broker itself. Stop RabbitMQ, submit an order, and the AP
 still answers 202: the event is staged in the outbox table alongside the order
 row and delivered once the broker returns.
 
+### Following one order across the services
+
+Every service reports what it did to Jaeger, at <http://localhost:16686>. Pick
+`packly-api`, open the newest trace, and the whole order is one waterfall rooted
+at `POST /api/orders`.
+
+Nothing correlates them after the fact: MassTransit carries the trace context in
+the message headers, so the pieces stitch themselves. A completed order comes to
+about seventy-five spans across six services, and three claims made above are
+visible in it rather than asserted:
+
+- **The fan-out.** Every `OrderStatusChanged` forks into three sibling spans -
+  the projection, the notification worker and the API's SignalR bridge - none of
+  which the orchestrator knows exist.
+- **The outbox.** Each publish is an `outbox send` and then an `outbox process`:
+  the message staged in the database first and handed to the broker afterwards,
+  rather than going straight out.
+- **Where the time goes.** Packing dominates at roughly two seconds, payment and
+  reservation sit under one, and every step that is not a simulated delay is
+  single-digit milliseconds.
+
+It is also the fastest way to find a stuck order: the trace shows whether a
+command was sent and never consumed, or consumed and never answered.
+
+Traces are held in memory, so they last as long as the container.
+
 ## Tests
 
 ```bash
@@ -313,7 +340,7 @@ This is a portfolio project, and these are deliberate rather than overlooked.
 
 ## Requirements
 
-Docker, and around 2 GB of free memory. The nine containers idle at roughly
+Docker, and around 2 GB of free memory. The ten containers idle at roughly
 1.6 GB together, half of that SQL Server. Every service builds inside its own
 image and every value has a working default, so a fresh clone runs without a
 `.env` file. Copy `.env.example` to `.env` to change ports or credentials.
