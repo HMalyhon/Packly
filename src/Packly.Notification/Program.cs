@@ -28,7 +28,7 @@ builder.Services.AddMassTransit(bus =>
             // for the transport rather than the work: a genuine mail service would
             // also need to recognise a message it has already sent, which needs
             // storage this simulation deliberately does not have.
-            endpoint.UseMessageRetry(retry => retry.Interval(3, TimeSpan.FromMilliseconds(200)));
+            endpoint.UsePacklyRetry();
 
             endpoint.ConfigureConsumer<OrderStatusChangedConsumer>(context);
         });

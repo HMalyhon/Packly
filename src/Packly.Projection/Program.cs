@@ -28,9 +28,11 @@ builder.Services.AddMassTransit(bus =>
         rabbit.ReceiveEndpoint(QueueName, endpoint =>
         {
             // Worth retrying rather than dead-lettering: the write is idempotent,
-            // so a second attempt after a transient database failure either
-            // applies the change or discards it as superseded.
-            endpoint.UseMessageRetry(retry => retry.Interval(3, TimeSpan.FromMilliseconds(200)));
+            // so a second attempt after a transient database failure either applies
+            // the change or discards it as superseded. This is also the only writer
+            // of the read model, and nothing replays what it drops - a status that
+            // dead-letters here is one the customer never sees again.
+            endpoint.UsePacklyRetry();
 
             endpoint.ConfigureConsumer<OrderStatusChangedConsumer>(context);
         });

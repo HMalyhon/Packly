@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    How a service reaches the bus, and how that conversation is traced. Still
-    deliberately narrow: no dependency on Entity Framework, so the services with
-    no database do not inherit one by referencing this.
+    How a service reaches the bus, how it retries, and how that conversation is
+    traced. Still deliberately narrow: no dependency on Entity Framework, so the
+    services with no database do not inherit one by referencing this.
   -->
 
   <PropertyGroup>

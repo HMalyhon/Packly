@@ -44,18 +44,10 @@ builder.Services.AddMassTransit(bus =>
 
         rabbit.ReceiveEndpoint(QueueName, endpoint =>
         {
-            // Two jobs, so one policy that grows. The first retry is near
-            // immediate, which is all an optimistic concurrency loser needs -
-            // MassTransit does not retry on its own, so without it a losing write
-            // dead-letters the order. Each subsequent wait adds two seconds,
-            // reaching about ninety in total, which is what a database restart
-            // needs: five attempts at 200ms gave up after a second, and an event
-            // arriving during one was dead-lettered, stranding an otherwise
-            // healthy order in whatever state it was passing through.
-            endpoint.UseMessageRetry(retry => retry.Incremental(
-                retryLimit: 10,
-                initialInterval: TimeSpan.FromMilliseconds(200),
-                intervalIncrement: TimeSpan.FromSeconds(2)));
+            // Two jobs for one policy here: the optimistic concurrency loser that
+            // needs an immediate second attempt, and the database restart that
+            // needs a long one.
+            endpoint.UsePacklyRetry();
 
             // Deduplicates redeliveries against the InboxState table, so
             // at-least-once delivery cannot drive the same transition twice.

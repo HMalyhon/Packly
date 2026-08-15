@@ -22,7 +22,7 @@ builder.Services.AddMassTransit(bus =>
         {
             // Inside the retry, not around it: an outbox that wraps the retry
             // flushes the failed attempt's StockReserved along with the good one.
-            endpoint.UseMessageRetry(retry => retry.Interval(3, TimeSpan.FromMilliseconds(200)));
+            endpoint.UsePacklyRetry();
             endpoint.UseInMemoryOutbox(context);
 
             endpoint.ConfigureConsumer<ReserveStockConsumer>(context);

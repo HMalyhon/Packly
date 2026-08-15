@@ -21,12 +21,9 @@ builder.Services.AddMassTransit(bus =>
         // constant is shared so a rename cannot silently break the send.
         rabbit.ReceiveEndpoint(QueueNames.Payment, endpoint =>
         {
-            // Retry first, so the outbox sits inside it. MassTransit builds the
-            // pipe in configuration order, and an outbox wrapped around the retry
-            // spans every attempt - it would flush the publishes of the attempt
-            // that failed alongside the one that succeeded, which is the opposite
-            // of what it is here for.
-            endpoint.UseMessageRetry(retry => retry.Interval(3, TimeSpan.FromMilliseconds(200)));
+            // Retry first, so the outbox sits inside it rather than around it.
+            // UsePacklyRetry spells out why that order is the whole point.
+            endpoint.UsePacklyRetry();
             endpoint.UseInMemoryOutbox(context);
 
             endpoint.ConfigureConsumer<AuthorizePaymentConsumer>(context);

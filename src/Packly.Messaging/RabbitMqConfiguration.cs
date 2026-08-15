@@ -7,9 +7,11 @@ namespace Packly.Messaging;
 /// Connects a service to the broker.
 /// </summary>
 /// <remarks>
-/// Only the connection is shared. Each service still declares its own consumers,
-/// sagas and endpoints, because hiding those behind a helper would make the
-/// topology harder to read rather than easier.
+/// The connection and the retry budget are shared; nothing else is. Each service
+/// still declares its own consumers, sagas and endpoints, because hiding those
+/// behind a helper would make the topology harder to read rather than easier. The
+/// retry policy earned its place here by drifting - see
+/// <see cref="RetryConfiguration"/>.
 /// </remarks>
 public static class RabbitMqConfiguration
 {
