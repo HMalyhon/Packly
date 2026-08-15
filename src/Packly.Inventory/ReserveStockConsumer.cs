@@ -16,11 +16,6 @@ namespace Packly.Inventory;
 public sealed class ReserveStockConsumer(ILogger<ReserveStockConsumer> logger)
     : IConsumer<ReserveStock>
 {
-    // Encoding the rule in the SKU keeps it in the request: nothing has to be
-    // seeded, and the same order always answers the same way - which is what makes
-    // a redelivered command a duplicate rather than a coin toss.
-    private const string SoldOutPrefix = "SOLD-OUT";
-
     /// <inheritdoc />
     public async Task Consume(ConsumeContext<ReserveStock> context)
     {
@@ -31,8 +26,7 @@ public sealed class ReserveStockConsumer(ILogger<ReserveStockConsumer> logger)
         // Stands in for talking to a warehouse.
         await Task.Delay(Random.Shared.Next(300, 800), context.CancellationToken);
 
-        var soldOut = message.Lines.FirstOrDefault(
-            line => line.Sku.StartsWith(SoldOutPrefix, StringComparison.OrdinalIgnoreCase));
+        var soldOut = StockRule.FirstUnavailable(message.Lines);
 
         if (soldOut is not null)
         {
