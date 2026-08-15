@@ -28,9 +28,12 @@ public sealed class PackOrderConsumer(ILogger<PackOrderConsumer> logger)
         // for, so the order should dwell in it rather than flash past.
         await Task.Delay(Random.Shared.Next(1200, 2500), context.CancellationToken);
 
-        // Version 4, not 7, for the reason spelled out in AuthorizePaymentConsumer:
-        // 200 tracking numbers built from a truncated version 7 GUID yielded one
-        // distinct value.
+        // Minted per delivery rather than derived from the order, unlike the payment
+        // reference: nothing correlates against a tracking number, so a redelivery
+        // that mints a second one costs nothing but a different string in a log.
+        // Version 4 and not 7, because only the leading characters survive the
+        // truncation and those are where a version 7 GUID keeps its millisecond
+        // timestamp - 200 of them yielded one distinct value.
         var trackingNumber = $"PK{Guid.NewGuid():N}"[..12].ToUpperInvariant();
 
         logger.LogInformation(

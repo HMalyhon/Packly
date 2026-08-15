@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using MassTransit;
 using Packly.Contracts.Commands;
 using Packly.Contracts.Events;
@@ -48,20 +49,30 @@ public sealed class AuthorizePaymentConsumer(ILogger<AuthorizePaymentConsumer> l
                 message.Amount,
                 DeclineThreshold);
 
+            // "At or above", not "exceeds": the rule is >=, so at exactly the
+            // threshold the older wording told the customer their total exceeded a
+            // number it equalled.
+            var reason = $"Amount {message.Amount:0.00} is at or above the " +
+                $"{DeclineThreshold:0.00} authorization limit.";
+
             await context.Publish(
-                new PaymentDeclined(
-                    message.OrderId,
-                    $"Amount {message.Amount:0.00} exceeds the authorization limit."),
+                new PaymentDeclined(message.OrderId, reason),
                 context.CancellationToken);
 
             return;
         }
 
-        // Version 4, not 7. Only the leading characters survive the truncation,
-        // and those are exactly where a version 7 GUID keeps its millisecond
-        // timestamp: every authorisation in the same millisecond would share a
-        // reference. This is the handle a refund is issued against.
-        var reference = $"PAY-{Guid.NewGuid():N}"[..16].ToUpperInvariant();
+        // Derived from the order rather than minted per delivery. This is the handle
+        // a refund is issued against, and delivery is at-least-once: a worker that
+        // crashes between publishing and acknowledging runs this again, and a fresh
+        // GUID each time would authorise against one reference while the saga - which
+        // keeps the first and ignores the second - refunds against another. Against a
+        // real gateway that is a hold nobody reverses.
+        //
+        // Hashed rather than sliced off the order id, because that id is a version 7
+        // GUID: its leading characters are a millisecond timestamp, so truncating it
+        // would give every order placed in the same millisecond the same reference.
+        var reference = $"PAY-{Convert.ToHexString(SHA256.HashData(message.OrderId.ToByteArray()))[..12]}";
 
         logger.LogInformation(
             "Payment authorized for order {OrderId}: {Amount}, reference {Reference}",
