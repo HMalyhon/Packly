@@ -16,6 +16,16 @@ public sealed class OrderItem
     /// </summary>
     public const int PriceScale = 2;
 
+    /// <summary>
+    /// Characters a sku may carry, matching the column it is stored in.
+    /// </summary>
+    public const int SkuMaxLength = 64;
+
+    /// <summary>
+    /// Characters a product name may carry, matching the column it is stored in.
+    /// </summary>
+    public const int NameMaxLength = 256;
+
     // EF Core materialises entities through this.
     private OrderItem()
     {
@@ -61,6 +71,18 @@ public sealed class OrderItem
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(quantity);
         ArgumentOutOfRangeException.ThrowIfNegative(unitPrice);
+
+        if (sku.Length > SkuMaxLength)
+        {
+            throw new ArgumentException(
+                $"A sku may not exceed {SkuMaxLength} characters.", nameof(sku));
+        }
+
+        if (name.Length > NameMaxLength)
+        {
+            throw new ArgumentException(
+                $"A name may not exceed {NameMaxLength} characters.", nameof(name));
+        }
 
         // The column is decimal(18,2), and SQL Server rounds silently on the way
         // in. Accepting 1.005 here would mean returning a total computed from

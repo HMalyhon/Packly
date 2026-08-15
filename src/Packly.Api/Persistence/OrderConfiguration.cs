@@ -19,7 +19,9 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.ToTable("Orders");
         builder.HasKey(order => order.Id);
 
-        builder.Property(order => order.CustomerId).HasMaxLength(128);
+        // Taken from the constant the endpoint validates against, so the column and
+        // the boundary cannot drift into disagreeing about what fits.
+        builder.Property(order => order.CustomerId).HasMaxLength(Order.CustomerIdMaxLength);
 
         // Lines are owned: they have no meaning outside their order, cannot be
         // queried independently, and are deleted with it. That is the aggregate
@@ -31,8 +33,8 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
             items.ToTable("OrderItems");
             items.WithOwner().HasForeignKey("OrderId");
 
-            items.Property(item => item.Sku).HasMaxLength(64);
-            items.Property(item => item.Name).HasMaxLength(256);
+            items.Property(item => item.Sku).HasMaxLength(OrderItem.SkuMaxLength);
+            items.Property(item => item.Name).HasMaxLength(OrderItem.NameMaxLength);
 
             // Matches OrderItem.PriceScale, which submission validates against.
             // Stated explicitly because money is the one place a silently changed

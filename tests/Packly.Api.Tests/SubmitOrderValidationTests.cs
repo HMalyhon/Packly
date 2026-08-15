@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Time.Testing;
+using Packly.Api.Domain;
 using Packly.Api.Features.Orders;
 using Xunit;
 
@@ -153,6 +154,102 @@ public sealed class SubmitOrderValidationTests
         Assert.True(built);
     }
 
+    // Every length below is checked from both sides. The column and the validator
+    // read the same constant, so a test that only proved "long is refused" would
+    // still pass if the two drifted apart by a character.
+    [Fact]
+    public void CustomerId_AtMaxLength_IsAccepted()
+    {
+        var request = new SubmitOrderRequest(
+            new string('a', Order.CustomerIdMaxLength),
+            [Item("MUG-1", "Mug", 1, 4.50m)]);
+
+        var built = SubmitOrderValidation.TryBuildOrder(request, Clock, out _, out _);
+
+        Assert.True(built);
+    }
+
+    [Fact]
+    public void CustomerId_OneOverMaxLength_IsRefusedRatherThanReachingTheColumn()
+    {
+        var request = new SubmitOrderRequest(
+            new string('a', Order.CustomerIdMaxLength + 1),
+            [Item("MUG-1", "Mug", 1, 4.50m)]);
+
+        var built = SubmitOrderValidation.TryBuildOrder(request, Clock, out _, out var errors);
+
+        Assert.False(built);
+        Assert.Contains("CustomerId", errors.Keys);
+    }
+
+    [Fact]
+    public void Sku_AtMaxLength_IsAccepted()
+    {
+        var request = Request(Item(new string('s', OrderItem.SkuMaxLength), "Mug", 1, 4.50m));
+
+        var built = SubmitOrderValidation.TryBuildOrder(request, Clock, out _, out _);
+
+        Assert.True(built);
+    }
+
+    [Fact]
+    public void Sku_OneOverMaxLength_IsRefused()
+    {
+        var request = Request(Item(new string('s', OrderItem.SkuMaxLength + 1), "Mug", 1, 4.50m));
+
+        var built = SubmitOrderValidation.TryBuildOrder(request, Clock, out _, out var errors);
+
+        Assert.False(built);
+        Assert.Contains("Items[0]", errors.Keys);
+    }
+
+    [Fact]
+    public void Name_AtMaxLength_IsAccepted()
+    {
+        var request = Request(Item("MUG-1", new string('n', OrderItem.NameMaxLength), 1, 4.50m));
+
+        var built = SubmitOrderValidation.TryBuildOrder(request, Clock, out _, out _);
+
+        Assert.True(built);
+    }
+
+    [Fact]
+    public void Name_OneOverMaxLength_IsRefused()
+    {
+        var request = Request(Item("MUG-1", new string('n', OrderItem.NameMaxLength + 1), 1, 4.50m));
+
+        var built = SubmitOrderValidation.TryBuildOrder(request, Clock, out _, out var errors);
+
+        Assert.False(built);
+        Assert.Contains("Items[0]", errors.Keys);
+    }
+
+    [Fact]
+    public void Items_AtMaxLines_IsAccepted()
+    {
+        var request = new SubmitOrderRequest("ada", [.. Lines(Order.MaxLines)]);
+
+        var built = SubmitOrderValidation.TryBuildOrder(request, Clock, out var order, out _);
+
+        Assert.True(built);
+        Assert.Equal(Order.MaxLines, order.Items.Count);
+    }
+
+    [Fact]
+    public void Items_OneOverMaxLines_IsRefusedOnceForTheOrderNotPerLine()
+    {
+        var request = new SubmitOrderRequest("ada", [.. Lines(Order.MaxLines + 1)]);
+
+        var built = SubmitOrderValidation.TryBuildOrder(request, Clock, out _, out var errors);
+
+        Assert.False(built);
+
+        // One complaint about the order, not one per line: the caller does not need
+        // the same sentence a hundred and one times.
+        Assert.Single(errors);
+        Assert.Contains("Items", errors.Keys);
+    }
+
     [Fact]
     public void Request_SeveralProblems_CollectsEveryOneNotOnlyTheFirst()
     {
@@ -181,4 +278,7 @@ public sealed class SubmitOrderValidationTests
 
     private static SubmitOrderItem Item(string sku, string name, int quantity, decimal unitPrice) =>
         new(sku, name, quantity, unitPrice);
+
+    private static IEnumerable<SubmitOrderItem?> Lines(int count) =>
+        Enumerable.Range(0, count).Select(index => Item($"SKU-{index}", "Item", 1, 1.00m));
 }

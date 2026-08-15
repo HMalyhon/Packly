@@ -11,6 +11,20 @@ namespace Packly.Api.Domain;
 /// </remarks>
 public sealed class Order
 {
+    /// <summary>
+    /// Characters a customer id may carry, matching the column it is stored in.
+    /// </summary>
+    public const int CustomerIdMaxLength = 128;
+
+    /// <summary>
+    /// Lines one order may carry.
+    /// </summary>
+    /// <remarks>
+    /// A cap rather than a suggestion. Without one a single request can ask the
+    /// database to write an order of any size, and the endpoint is anonymous.
+    /// </remarks>
+    public const int MaxLines = 100;
+
     private readonly List<OrderItem> _items = [];
 
     // EF Core materialises entities through this; application code uses Submit.
@@ -60,11 +74,25 @@ public sealed class Order
         ArgumentException.ThrowIfNullOrWhiteSpace(customerId);
         ArgumentNullException.ThrowIfNull(lines);
 
+        if (customerId.Length > CustomerIdMaxLength)
+        {
+            throw new ArgumentException(
+                $"A customer id may not exceed {CustomerIdMaxLength} characters.",
+                nameof(customerId));
+        }
+
         var items = lines as IReadOnlyCollection<OrderItem> ?? [.. lines];
 
         if (items.Count == 0)
         {
             throw new ArgumentException("An order must contain at least one line.", nameof(lines));
+        }
+
+        if (items.Count > MaxLines)
+        {
+            throw new ArgumentException(
+                $"An order may not contain more than {MaxLines} lines.",
+                nameof(lines));
         }
 
         var order = new Order(Guid.CreateVersion7(), customerId, submittedAt);

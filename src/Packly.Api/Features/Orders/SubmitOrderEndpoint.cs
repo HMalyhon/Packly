@@ -35,9 +35,14 @@ public static class SubmitOrderEndpoint
         OrdersDbContext dbContext,
         IPublishEndpoint publishEndpoint,
         TimeProvider timeProvider,
-        ILogger<Order> logger,
+        ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
+        // Categorised as this endpoint rather than as Order, which never logs and so
+        // sent every line here out under the name of a type that says nothing about
+        // where it came from. A static class cannot be an ILogger<T> argument.
+        var logger = loggerFactory.CreateLogger(typeof(SubmitOrderEndpoint));
+
         if (!SubmitOrderValidation.TryBuildOrder(request, timeProvider, out var order, out var errors))
         {
             return TypedResults.ValidationProblem(errors);

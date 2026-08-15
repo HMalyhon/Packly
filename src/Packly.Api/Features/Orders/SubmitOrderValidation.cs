@@ -24,10 +24,24 @@ internal static class SubmitOrderValidation
         {
             errors[nameof(request.CustomerId)] = ["A customer id is required."];
         }
+        else if (request.CustomerId.Length > Order.CustomerIdMaxLength)
+        {
+            errors[nameof(request.CustomerId)] =
+                [$"A customer id may not exceed {Order.CustomerIdMaxLength} characters."];
+        }
 
         if (request.Items is null || request.Items.Count == 0)
         {
             errors[nameof(request.Items)] = ["An order must contain at least one item."];
+            return false;
+        }
+
+        // Refused here rather than line by line: the answer is about the order, and
+        // reporting it once beats ten thousand identical complaints.
+        if (request.Items.Count > Order.MaxLines)
+        {
+            errors[nameof(request.Items)] =
+                [$"An order may not contain more than {Order.MaxLines} items."];
             return false;
         }
 
@@ -49,14 +63,26 @@ internal static class SubmitOrderValidation
 
             var problems = new List<string>();
 
+            // Length is checked here and not only by the column. Without it an
+            // over-long field passes validation, reaches SaveChanges, and comes back
+            // as a 500 - a client mistake escaping as a server error, which is the
+            // one outcome this method's signature says cannot happen.
             if (string.IsNullOrWhiteSpace(item.Sku))
             {
                 problems.Add("A sku is required.");
+            }
+            else if (item.Sku.Length > OrderItem.SkuMaxLength)
+            {
+                problems.Add($"A sku may not exceed {OrderItem.SkuMaxLength} characters.");
             }
 
             if (string.IsNullOrWhiteSpace(item.Name))
             {
                 problems.Add("A name is required.");
+            }
+            else if (item.Name.Length > OrderItem.NameMaxLength)
+            {
+                problems.Add($"A name may not exceed {OrderItem.NameMaxLength} characters.");
             }
 
             if (item.Quantity is null or <= 0)
