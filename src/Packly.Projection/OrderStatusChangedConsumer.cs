@@ -20,6 +20,9 @@ public sealed class OrderStatusChangedConsumer(
     ILogger<OrderStatusChangedConsumer> logger)
     : IConsumer<OrderStatusChanged>
 {
+    // One to try, one to settle the race it may have lost. See TryApplyAsync.
+    private const int InsertRaceAttempts = 2;
+
     /// <inheritdoc />
     public async Task Consume(ConsumeContext<OrderStatusChanged> context)
     {
@@ -66,29 +69,51 @@ public sealed class OrderStatusChangedConsumer(
             message.Version);
     }
 
+    // Two different situations raise the same duplicate key, and only one of them
+    // means the update is superseded.
+    //
     // Upsert builds the document it inserts from the equality parts of the filter
-    // alone, so a message that lost the version comparison looks like an order with
-    // no document yet and collides with the key already there. The duplicate key is
-    // the answer, not a failure: a newer version is stored.
+    // alone, so any message the filter does not match looks like an order with no
+    // document yet and tries to insert. When a document is already stored at a
+    // newer version, that collision is the answer: nothing older should be applied.
+    //
+    // When no document exists yet, though, two messages for the same order can both
+    // miss the filter and both try to insert. One wins and the other collides - and
+    // the one that collides may be the newer of the two. Discarding it there would
+    // drop a status permanently, silently, and the read model has no replay to
+    // recover it. So a collision is retried rather than believed: the second attempt
+    // sees the document the winner wrote, and the version comparison makes the real
+    // decision. Two attempts is the whole of it, because after the first there is
+    // always a document to compare against.
     private async Task<bool> TryApplyAsync(
         FilterDefinition<OrderStatusDocument> filter,
         UpdateDefinition<OrderStatusDocument> update,
         CancellationToken cancellationToken)
     {
-        try
+        for (var attempt = 1; attempt <= InsertRaceAttempts; attempt++)
         {
-            await collection.UpdateOneAsync(
-                filter,
-                update,
-                new UpdateOptions { IsUpsert = true },
-                cancellationToken);
+            try
+            {
+                await collection.UpdateOneAsync(
+                    filter,
+                    update,
+                    new UpdateOptions { IsUpsert = true },
+                    cancellationToken);
 
-            return true;
+                return true;
+            }
+            catch (MongoWriteException exception)
+
+                // Null when the write failed only on write concern, which is not a
+                // duplicate key. Checked with ?. because an exception thrown inside
+                // a filter is swallowed and reads as a non-match, which would let an
+                // unrelated fault through here looking like a handled one.
+                when (exception.WriteError?.Category == ServerErrorCategory.DuplicateKey)
+            {
+                // Round again: a document exists now, so the filter decides.
+            }
         }
-        catch (MongoWriteException exception)
-            when (exception.WriteError.Category == ServerErrorCategory.DuplicateKey)
-        {
-            return false;
-        }
+
+        return false;
     }
 }
