@@ -293,9 +293,15 @@ that always passes. SQL Server stamps the column itself, and the losing write
 retries instead of overwriting the winner.
 
 **The projection is idempotent by version.** Every status change carries a
-monotonic version, and an update applies only if it is newer than what is stored.
-Delivery is at-least-once and unordered, so without it an order could be shown
+monotonic version, and the current status moves only when a newer one arrives.
+Delivery is at-least-once and unordered, so without that an order could be shown
 moving from `Completed` back to `Packing`.
+
+The history is a separate decision, and conflating the two cost it three entries
+out of five. A step that arrives late still happened, so it is recorded whether or
+not it wins that comparison — always written, deduplicated by version rather than
+gated on it. Gate it and an order that catches up after the projection has been
+down keeps only the steps that happened to arrive in order.
 
 **Unhandled events are ignored, once, for the whole machine.** An event a state
 has no handler for is a duplicate rather than a fault — the inbox only catches

@@ -34,12 +34,15 @@ public sealed class OrderStatusDocument
     public DateTime UpdatedAt { get; set; }
 
     /// <summary>
-    /// Gets or sets the statuses recorded for this order, oldest first.
+    /// Gets or sets every status recorded for this order.
     /// </summary>
     /// <remarks>
     /// Embedded because it is only ever read alongside its order and is bounded by
-    /// the length of the workflow. Ordered but not guaranteed complete: a status
-    /// overtaken in delivery loses the version comparison and is never recorded.
+    /// the length of the workflow. Complete but unordered: a step is recorded
+    /// whether or not it wins the comparison that moves
+    /// <see cref="Status"/> forward, and it is stored in the order it arrived.
+    /// Sort by <see cref="OrderStatusHistoryEntry.Version"/> to read it back as the
+    /// workflow ran.
     /// </remarks>
     public List<OrderStatusHistoryEntry> History { get; set; } = [];
 }

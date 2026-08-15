@@ -44,6 +44,9 @@ public static class GetOrderStatusEndpoint
             : TypedResults.Ok(ToResponse(document));
     }
 
+    // History is sorted here rather than stored sorted: steps are recorded as they
+    // arrive so that none is lost, and delivery is unordered, so the stored array is
+    // complete but not in workflow order.
     private static OrderStatusResponse ToResponse(OrderStatusDocument document) =>
         new(
             document.OrderId,
@@ -51,8 +54,10 @@ public static class GetOrderStatusEndpoint
             document.Description,
             document.Version,
             document.UpdatedAt,
-            [.. document.History.Select(step => new OrderStatusStep(
-                step.Status,
-                step.Description,
-                step.OccurredAt))]);
+            [.. document.History
+                .OrderBy(step => step.Version)
+                .Select(step => new OrderStatusStep(
+                    step.Status,
+                    step.Description,
+                    step.OccurredAt))]);
 }
