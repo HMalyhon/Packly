@@ -187,6 +187,11 @@ curl -s -o /dev/null -w '%{http_code}\n' -X POST http://localhost:8080/api/order
   -H 'content-type: application/json' \
   -d '{"customerId":"ada","items":[{"sku":"MUG-1","name":"Mug","quantity":1,"unitPrice":4.50}]}'
 
+# health: 503, and `docker compose ps` marks the API unhealthy. It names each
+# check - write model, read model, broker - so the answer says which one is down
+# rather than only that something is.
+curl -s http://localhost:8080/health
+
 docker compose start sqlserver
 ```
 

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using OpenTelemetry.Trace;
 using Packly.Api.Features.Orders;
+using Packly.Api.Health;
 using Packly.Api.Persistence;
 using Packly.Messaging;
 using Packly.ReadModel;
@@ -60,6 +61,14 @@ builder.Services.AddMassTransit(bus =>
 });
 
 builder.Services.AddSingleton(TimeProvider.System);
+
+// Both sides, because either can be down while the other answers - which is the
+// point the CQRS split is making, and a probe that only checked one would report
+// healthy while half the API was not. MassTransit adds a check of its own for the
+// broker, so /health covers all three.
+builder.Services.AddHealthChecks()
+    .AddCheck<WriteModelHealthCheck>("write-model")
+    .AddCheck<ReadModelHealthCheck>("read-model");
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -120,6 +129,11 @@ app.UseSwaggerUI(options =>
 {
     options.SwaggerEndpoint("/swagger/v1/swagger.json", "Packly v1");
 });
+
+// Kestrel does not listen until the migration above has finished, so any answer
+// here already means the API is past startup; what the checks add is whether the
+// two databases behind it are answering too.
+app.MapHealth();
 
 app.MapSubmitOrder();
 app.MapGetOrderStatus();
