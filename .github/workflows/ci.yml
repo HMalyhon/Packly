@@ -82,3 +82,71 @@ jobs:
           set: |
             *.cache-from=type=gha
             *.cache-to=type=gha,mode=max
+
+  # The images job proves the six images build. This proves that what they come
+  # up as actually processes an order - which is the claim the README opens with,
+  # and the one a badge saying "CI passing" is read as covering.
+  #
+  # `up --build` rather than the images the job above cached, because the point is
+  # to run the documented command as written rather than a faster equivalent.
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: build
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: docker compose up --build
+        run: docker compose up -d --build
+
+      - name: Wait for the API to report healthy
+        run: |
+          for _ in $(seq 1 60); do
+            if curl -fsS http://localhost:8080/health; then
+              echo
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "the API never reported healthy"
+          exit 1
+
+      # All three endings, because the two failures are where the saga earns its
+      # name: one stops, the other compensates first.
+      - name: Follow an order down each path
+        run: |
+          set -uo pipefail
+
+          order() { # label sku name quantity price expected
+            local id status=""
+            id=$(curl -fsS -X POST http://localhost:8080/api/orders \
+                  -H 'content-type: application/json' \
+                  -d "{\"customerId\":\"ci\",\"items\":[{\"sku\":\"$2\",\"name\":\"$3\",\"quantity\":$4,\"unitPrice\":$5}]}" \
+                 | python3 -c 'import sys,json;print(json.load(sys.stdin)["orderId"])')
+
+            for _ in $(seq 1 60); do
+              status=$(curl -fsS "http://localhost:8080/api/orders/$id" 2>/dev/null \
+                       | python3 -c 'import sys,json;print(json.load(sys.stdin).get("status",""))' 2>/dev/null || true)
+              case "$status" in Completed|Rejected|Cancelled) break;; esac
+              sleep 2
+            done
+
+            if [ "$status" != "$6" ]; then
+              echo "FAIL $1: expected $6, got ${status:-nothing} (order $id)"
+              return 1
+            fi
+            echo "ok   $1 -> $status"
+          }
+
+          order "happy path" MUG-1      Mug   2 4.50   Completed || exit 1
+          order "declined"   CHAIR-1    Chair 2 600.00 Rejected  || exit 1
+          order "sold out"   SOLD-OUT-1 Vinyl 1 42.00  Cancelled || exit 1
+
+      - name: Service logs
+        if: failure()
+        run: docker compose logs --tail 200
+
+      - name: Stop the stack
+        if: always()
+        run: docker compose down -v
