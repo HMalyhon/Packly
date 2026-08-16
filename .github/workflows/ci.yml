@@ -11,9 +11,16 @@ on:
 permissions:
   contents: read
 
+# A second push supersedes the first, so an abandoned commit stops burning a
+# runner halfway through six image builds.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - uses: actions/checkout@v7
@@ -23,6 +30,16 @@ jobs:
       - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
+
+      # setup-dotnet's own cache wants a lock file, which this repository does
+      # not carry. Central package management means every version this restore
+      # resolves is written in these two files, so they are the key.
+      - name: Cache NuGet packages
+        uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', 'Directory.Build.props') }}
+          restore-keys: nuget-${{ runner.os }}-
 
       - name: Restore
         run: dotnet restore
@@ -47,9 +64,21 @@ jobs:
   # command fails for everyone who clones the repository.
   images:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@v7
 
+      - uses: docker/setup-buildx-action@v4
+
+      # Compose doubles as a bake definition, so the six buildable services are
+      # built through buildx and their layers survive between runs. Without it
+      # each run restored six times from scratch, which is exactly the work the
+      # Dockerfiles are layered to avoid.
       - name: Build images
-        run: docker compose build
+        uses: docker/bake-action@v7
+        with:
+          files: docker-compose.yml
+          set: |
+            *.cache-from=type=gha
+            *.cache-to=type=gha,mode=max
