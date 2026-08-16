@@ -17,6 +17,10 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+    <!-- Every image starts `dotnet Packly.X.dll`, so the native launcher publish
+         would otherwise put beside it is carried and never run. -->
+    <UseAppHost>false</UseAppHost>
   </PropertyGroup>
 
   <PropertyGroup>

@@ -18,9 +18,11 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # Reads global.json rather than naming a version here, so CI cannot drift
+      # onto a different SDK from the one the repository asks for.
       - uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: '10.0.x'
+          global-json-file: global.json
 
       - name: Restore
         run: dotnet restore
