@@ -11,6 +11,12 @@
     <PackageReference Include="MassTransit.RabbitMQ" />
   </ItemGroup>
 
+  <!-- The rule is internal: nothing outside this service calls it, and the tests
+       are the only reason it is reachable at all. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Packly.Workers.Tests" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Packly.Contracts\Packly.Contracts.csproj" />
     <ProjectReference Include="..\Packly.Messaging\Packly.Messaging.csproj" />

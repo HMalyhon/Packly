@@ -29,6 +29,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Packly.Orchestrator.Tests",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Packly.Api.Tests", "tests\Packly.Api.Tests\Packly.Api.Tests.csproj", "{EEEC9254-1046-4D47-83D8-F040A79CCD23}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Packly.Workers.Tests", "tests\Packly.Workers.Tests\Packly.Workers.Tests.csproj", "{2DAB80E0-289A-4D0E-A531-49BA32DABF0A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -171,6 +173,18 @@ Global
 		{EEEC9254-1046-4D47-83D8-F040A79CCD23}.Release|x64.Build.0 = Release|Any CPU
 		{EEEC9254-1046-4D47-83D8-F040A79CCD23}.Release|x86.ActiveCfg = Release|Any CPU
 		{EEEC9254-1046-4D47-83D8-F040A79CCD23}.Release|x86.Build.0 = Release|Any CPU
+		{2DAB80E0-289A-4D0E-A531-49BA32DABF0A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2DAB80E0-289A-4D0E-A531-49BA32DABF0A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2DAB80E0-289A-4D0E-A531-49BA32DABF0A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{2DAB80E0-289A-4D0E-A531-49BA32DABF0A}.Debug|x64.Build.0 = Debug|Any CPU
+		{2DAB80E0-289A-4D0E-A531-49BA32DABF0A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{2DAB80E0-289A-4D0E-A531-49BA32DABF0A}.Debug|x86.Build.0 = Debug|Any CPU
+		{2DAB80E0-289A-4D0E-A531-49BA32DABF0A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2DAB80E0-289A-4D0E-A531-49BA32DABF0A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2DAB80E0-289A-4D0E-A531-49BA32DABF0A}.Release|x64.ActiveCfg = Release|Any CPU
+		{2DAB80E0-289A-4D0E-A531-49BA32DABF0A}.Release|x64.Build.0 = Release|Any CPU
+		{2DAB80E0-289A-4D0E-A531-49BA32DABF0A}.Release|x86.ActiveCfg = Release|Any CPU
+		{2DAB80E0-289A-4D0E-A531-49BA32DABF0A}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -187,5 +201,6 @@ Global
 		{4548B981-6FC9-4FA2-8B81-808BB4CAEA42} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{BE52F601-D1D0-42CA-8BFB-8676137CFEE9} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{EEEC9254-1046-4D47-83D8-F040A79CCD23} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{2DAB80E0-289A-4D0E-A531-49BA32DABF0A} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal
