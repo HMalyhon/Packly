@@ -352,9 +352,13 @@ This is a portfolio project, and these are deliberate rather than overlooked.
 ## Requirements
 
 Docker, and around 2 GB of free memory. The ten containers idle at roughly
-1.6 GB together, half of that SQL Server. Every service builds inside its own
-image and every value has a working default, so a fresh clone runs without a
-`.env` file. Copy `.env.example` to `.env` to change ports or credentials.
+1.6 GB together, half of that SQL Server. That image is the one piece with no
+arm64 build, so on Apple Silicon it runs emulated: compose asks for
+`linux/amd64` explicitly, and Rosetta has to be enabled in Docker Desktop.
+
+Every service builds inside its own image and every value has a working default,
+so a fresh clone runs without a `.env` file. Copy `.env.example` to `.env` to
+change ports or credentials.
 
 The status page loads the SignalR client from a CDN, pinned to one version and
 checked against its hash, so that one page needs an internet connection. The API
