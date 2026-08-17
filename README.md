@@ -17,6 +17,8 @@ at <http://localhost:8080/swagger>, the broker's own UI at
 <http://localhost:15672> (`packly` / `packly`), and the traces at
 <http://localhost:16686>.
 
+![The status page three seconds after an order was placed, showing five steps each pushed over SignalR as a different service reported in](docs/status-page.png)
+
 ---
 
 ## What it is
@@ -125,8 +127,8 @@ curl -X POST http://localhost:8080/api/orders -H 'content-type: application/json
 ```
 
 **Payment declined** — the rule is on the order **total**, not on any one price,
-so two chairs at 600 are refused where one at 600 would not be. Ends at
-`Rejected`:
+so two chairs at 600 are refused where one at 600 would not be. The limit is
+1000, and it declines at the limit rather than above it. Ends at `Rejected`:
 
 ```bash
 curl -X POST http://localhost:8080/api/orders -H 'content-type: application/json' -d '{
@@ -181,8 +183,8 @@ docker compose stop sqlserver
 curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8080/api/orders/ORDER_ID  # 200
 curl -s -o /dev/null -w '%{http_code}\n' 'http://localhost:8080/api/orders'         # 200
 
-# writes: 500, because that is the side that is down. Takes ~15s: Entity
-# Framework retries a connection failure before giving up.
+# writes: 500, because that is the side that is down. Takes ten to fifteen
+# seconds: Entity Framework retries a connection failure before giving up.
 curl -s -o /dev/null -w '%{http_code}\n' -X POST http://localhost:8080/api/orders \
   -H 'content-type: application/json' \
   -d '{"customerId":"ada","items":[{"sku":"MUG-1","name":"Mug","quantity":1,"unitPrice":4.50}]}'
@@ -244,12 +246,33 @@ Traces are held in memory, so they last as long as the container.
 dotnet test
 ```
 
-The saga is the part worth testing and the part hardest to check by hand: the
+Seventy-one tests across three projects, eight seconds once it has built. No
+containers: everything here is either a pure function or runs against an
+in-memory bus.
+
+**The saga** is the part worth testing and the part hardest to check by hand: the
 three ways an order can end, and the duplicate that must not end it. Five tests
 run against an in-memory bus and saga repository rather than RabbitMQ and SQL
 Server — what is under test is the decision, which command follows which event
 and where the order lands, and that is the same whichever transport carries it.
-No containers, a few seconds.
+
+**The API's boundary**, which is where a client's mistake either becomes a 400 or
+escapes as a 500. Every limit is checked from both sides, because a test that
+only proves "too long is refused" still passes when the validator and the column
+have drifted a character apart.
+
+**The rules the two simulations apply**, which are the ones documented above with
+`curl`: 999.99 authorises and 1000.00 declines, a sku starting with the prefix is
+refused in any case while one merely containing it is a real product. They are
+pure functions, so testing them costs no artificial delay.
+
+**And the ordering the workers depend on** — the outbox configured inside the
+retry. One consumer that publishes before it throws, run both ways round: exactly
+one event reaches the bus, or two do.
+
+The stack itself is checked separately, on every push. CI runs `docker compose up
+--build` and follows an order down each of the three paths, so the badge means
+the documented command works rather than only that the code compiles.
 
 ## Layout
 
@@ -261,14 +284,13 @@ No containers, a few seconds.
 | `Packly.Inventory` | Reserves stock and packs |
 | `Packly.Notification` | "Emails" the customer on outcomes |
 | `Packly.Projection` | Builds the read model |
-| `Packly.Contracts` | Message schemas, and nothing else: no transport, no serializer |
-| `Packly.Messaging` | Broker connection and trace export, shared by every service |
+| `Packly.Contracts` | Message schemas and the queue names commands are sent to. No transport, and no serializer beyond asking that the status travels as its name |
+| `Packly.Messaging` | Broker connection, retry budget and trace export, shared by every service |
 | `Packly.ReadModel` | Read model schema and the serialisation it assumes |
 
 The three shared assemblies are all contracts — what services say to each other,
 how they reach the broker and report what they did, and what shape the read model
-has. No shared domain
-logic, and no shared write-side persistence.
+has. No shared domain logic, and no shared write-side persistence.
 
 ## Decisions worth explaining
 
@@ -314,9 +336,11 @@ redeliveries of the same message id, and a worker that publishes twice mints a
 fresh one. Declaring the default in one place rather than as a list per state
 means a combination nobody anticipated is logged rather than dead-lettered.
 
-**Minimal APIs, not controllers.** Three endpoints, each a handler with its
+**Minimal APIs, not controllers.** Four endpoints, each a handler with its
 dependencies in the signature. A controller would add a class, a base type and a
-routing attribute to reach the same place.
+routing attribute to reach the same place. `/health` is a handler too rather than
+`MapHealthChecks`, which builds an endpoint with no method behind it — ApiExplorer
+skips those, so Swagger cannot document them.
 
 **MassTransit pinned to 8.5.10.** Version 9 moved to a commercial licence. 8.5.10
 is Apache-2.0 and still ships native `net10.0` assets, which is the right trade
@@ -341,6 +365,9 @@ This is a portfolio project, and these are deliberate rather than overlooked.
   reverses is a hold rather than a completed charge.
 - **Migrations run at startup**, because the stack has to come up with one
   command. A real deployment would migrate as its own step.
+- **Finished sagas are never removed.** A completed, rejected or cancelled order
+  keeps its row, which is convenient for looking at and unbounded over time. A
+  real system would archive them on a schedule.
 - **The unfiltered order list scans.** The index serves the filtered query; for a
   collection this size a second index is not worth it.
 - **The payment and warehouse services are simulations** with fixed rules and
