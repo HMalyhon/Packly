@@ -1,0 +1,9 @@
+# .editorconfig asks for LF and nothing enforced it, so a clone on Windows could
+# commit CRLF back into files the analyzers then read differently.
+* text=auto eol=lf
+
+# Checked as-is: these are read by tooling that does not care, and normalising
+# them only produces noise in diffs.
+*.png binary
+*.jpg binary
+*.gif binary

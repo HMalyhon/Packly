@@ -2,10 +2,15 @@
 bin/
 obj/
 
-# IDE
+# IDE and OS
 .vs/
 .idea/
+.vscode/
 *.user
+.DS_Store
+
+# Test output
+TestResults/
 
 # Local tooling and secrets
 .claude/

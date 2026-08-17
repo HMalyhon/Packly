@@ -1,0 +1,37 @@
+version: 2
+
+# The repository argues about pinning in several places and had nothing watching
+# the pins.
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+
+  # Central package management, so every version lives in one file.
+  # MassTransit is held at 8.x on purpose - 9 moved to a commercial licence.
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: monthly
+    ignore:
+      - dependency-name: MassTransit*
+        update-types: [version-update:semver-major]
+
+  # The six Dockerfiles, which pin only the major of each base image.
+  - package-ecosystem: docker
+    directories:
+      - /src/*
+    schedule:
+      interval: monthly
+
+  # The four backing services, whose tags are in the compose file rather than in
+  # any Dockerfile. Mongo is held at 7 deliberately - the compose file records
+  # what happened on 8.
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: monthly
+    ignore:
+      - dependency-name: mongo
+        update-types: [version-update:semver-major]
