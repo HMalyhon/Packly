@@ -33,7 +33,7 @@ services:
 
   # Write side: the order aggregate, the MassTransit outbox, and saga state.
   sqlserver:
-    image: mcr.microsoft.com/mssql/server:2022-latest
+    image: mcr.microsoft.com/mssql/server:2025-latest
     # The only image here that ships amd64 alone; every other one has an arm64
     # build. Stated rather than left to chance, because without it an Apple
     # Silicon host fails as two services waiting forever on service_healthy
