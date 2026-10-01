@@ -89,7 +89,7 @@ services:
   # publishes no major-only tag; 2.x speaks OTLP natively, so there is nothing to
   # configure.
   jaeger:
-    image: jaegertracing/jaeger:2.20.0
+    image: jaegertracing/jaeger:2.21.0
     container_name: packly-jaeger
     ports:
       - "${JAEGER_UI_PORT:-16686}:16686"
