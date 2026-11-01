@@ -32,6 +32,12 @@
     <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.12" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.12" />
     <PackageVersion Include="MongoDB.Driver" Version="3.10.0" />
+    <!--
+      A transitive pin. EF Core, through 10.0.14, asks for a SqlClient that brings
+      System.Security.Cryptography.Pkcs 9.0.11, which fails the restore audit. 6.1.8
+      takes the patched 9.0.21; delete this once EF Core asks for it.
+    -->
+    <PackageVersion Include="Microsoft.Data.SqlClient" Version="6.1.8" />
   </ItemGroup>
 
   <ItemGroup Label="Observability">
